@@ -1,0 +1,1801 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>施工进度计划原型</title>
+  <style>
+:root { color-scheme: light; --ink:#1e2933; --muted:#627280; --line:#d8e0e5; --paper:#ffffff; --wash:#f4f7f8; --green:#1d7467; --orange:#c4761a; --red:#b84242; }
+* { box-sizing: border-box; }
+[hidden] { display:none !important; }
+body { margin:0; color:var(--ink); background:var(--wash); font-family:"Microsoft YaHei", "Segoe UI", sans-serif; font-size:14px; }
+.app-header { min-height:76px; background:var(--paper); border-bottom:1px solid var(--line); padding:14px 28px; display:flex; justify-content:space-between; align-items:center; }
+h1,h2,p { margin:0; } h1 { font-size:22px; font-weight:600; } h2 { font-size:14px; font-weight:600; margin-bottom:12px; } .eyebrow { color:var(--green); font-size:12px; margin-bottom:3px; }
+.header-actions { display:flex; align-items:center; gap:12px; }.status { color:var(--muted); font-size:13px; }.header-button,.secondary { border:1px solid var(--green); color:var(--green); background:#fff; padding:7px 10px; border-radius:4px; }.layout { display:block; min-height:calc(100vh - 76px); }
+.config-panel { background:var(--paper); border:1px solid var(--line); border-radius:5px; overflow:hidden; }.config-section { padding:18px 20px; border-bottom:1px solid var(--line); }.config-section:last-of-type { border-bottom:0; }.config-section h3 { margin:0 0 14px; font-size:15px; }.config-grid { display:grid; gap:12px; }.config-grid.four { grid-template-columns:repeat(4,minmax(0,1fr)); }.config-grid label { margin:0; }
+.module-label { color:var(--green); font-size:12px; font-weight:600; margin-bottom:16px; text-transform:uppercase; }
+label { display:block; color:var(--muted); font-size:12px; margin-bottom:10px; } input,select { margin-top:5px; width:100%; height:32px; border:1px solid var(--line); border-radius:4px; padding:4px 7px; color:var(--ink); background:#fff; font:inherit; }
+.two-fields { display:grid; grid-template-columns:1fr 1fr; gap:9px; }.check-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }.check-grid label { display:flex; gap:6px; align-items:center; margin:0; color:var(--ink); font-size:12px; }.check-grid input { width:auto; height:auto; margin:0; }.hint { color:var(--muted); font-size:12px; line-height:1.5; }
+button { font:inherit; cursor:pointer; }.primary { width:100%; border:0; border-radius:4px; padding:10px; color:#fff; background:var(--green); font-weight:600; }.workspace { width:100%; max-width:1600px; margin:0 auto; padding:24px 28px; min-width:0; }.summary { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-bottom:20px; }.metric { background:var(--paper); border:1px solid var(--line); border-radius:5px; padding:12px; }.metric small { display:block; color:var(--muted); margin-bottom:5px; }.metric strong { font-size:20px; font-weight:600; }
+.primary.compact,.secondary.compact { width:auto; padding:7px 12px; }.module-nav { display:flex; flex-wrap:wrap; gap:4px; background:var(--paper); border:1px solid var(--line); padding:5px; margin-bottom:20px; }.module-tab { border:0; background:transparent; color:var(--muted); padding:9px 14px; }.module-tab.active { color:#fff; background:var(--green); }.module-panel { display:none; margin-bottom:20px; }.module-panel.active { display:block; }.module-heading { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:16px; }.module-heading h2 { font-size:20px; margin:0; }.module-hint { color:var(--muted); font-size:12px; }.input-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }.input-card { background:var(--paper); border:1px solid var(--line); border-radius:5px; padding:16px; min-width:0; }.input-card h3,.process-form h3 { margin:0 0 14px; font-size:15px; font-weight:600; }.input-card .drawing-list { max-height:260px; overflow:auto; border:0; margin-top:10px; }.input-card .drawing-row { display:block; padding:8px 0; }.input-card .drawing-row.header,.input-card .drawing-note { display:none; }.input-card .drawing-row select { margin-top:7px; }.configure-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }.configure-item { background:var(--paper); border:1px solid var(--line); padding:14px; }.configure-item strong { display:block; margin-bottom:5px; }.configure-item span { color:var(--muted); font-size:12px; }
+.workflow-switch { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }.workflow-button { display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-height:66px; padding:12px 14px; border:1px solid var(--line); border-radius:5px; color:var(--ink); background:var(--paper); text-align:left; }.workflow-button span { color:var(--muted); font-size:12px; }.workflow-button.active { border-color:var(--green); box-shadow:inset 4px 0 0 var(--green); }.workflow-button.active strong { color:var(--green); }body[data-workflow="create"] .audit-only { display:none; }body[data-workflow="create"] .input-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+body[data-workflow="audit"] .create-only { display:none; }.material-actions { display:flex; justify-content:space-between; align-items:center; gap:20px; margin-top:14px; padding:15px 16px; border:1px solid var(--line); border-left:4px solid var(--green); background:var(--paper); }.material-actions strong,.material-actions span { display:block; }.material-actions span { margin-top:4px; color:var(--muted); font-size:12px; }.material-actions .primary { flex:0 0 auto; }
+.feature-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px 12px; }.feature-grid label { display:flex; align-items:center; gap:8px; min-height:38px; margin:0; padding:8px 10px; border:1px solid var(--line); border-radius:4px; color:var(--ink); background:#fafcfc; }.feature-grid input { width:auto; height:auto; margin:0; }.config-actions { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:15px 20px; border-top:1px solid var(--line); background:#f7f9fa; }.config-actions .hint { max-width:75%; }.config-actions .primary { flex:0 0 auto; }
+.template-row { display:grid; grid-template-columns:minmax(180px,260px) auto minmax(260px,1fr); gap:12px; align-items:end; margin-bottom:14px; }.template-row label { margin:0; }.template-row .hint { align-self:center; }.major-quick-list { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }.major-quick-list label { display:flex; align-items:flex-start; gap:9px; min-height:58px; margin:0; padding:10px 11px; border:1px solid var(--line); border-radius:4px; color:var(--ink); background:#fafcfc; cursor:pointer; }.major-quick-list input { flex:0 0 auto; width:auto; height:auto; margin:3px 0 0; }.major-quick-list span { min-width:0; }.major-quick-list strong,.major-quick-list small { display:block; }.major-quick-list strong { font-size:13px; line-height:1.4; }.major-quick-list small { margin-top:4px; color:var(--muted); font-size:11px; }
+.recognition-panel { border:1px solid var(--line); background:#fff; }.recognition-empty { display:flex; flex-direction:column; gap:5px; padding:18px; color:var(--muted); }.recognition-empty strong { color:var(--ink); }.recognition-note { display:flex; justify-content:space-between; gap:18px; padding:11px 14px; border-bottom:1px solid var(--line); background:#f7f9fa; }.recognition-note span { font-weight:600; }.recognition-note small { max-width:620px; color:var(--muted); line-height:1.5; text-align:right; }.recognition-row { display:grid; grid-template-columns:70px minmax(180px,1fr) auto; gap:12px; align-items:center; padding:11px 14px; border-bottom:1px solid var(--line); }.recognition-row:last-child { border-bottom:0; }.recognition-row strong,.recognition-row small { display:block; }.recognition-row small { margin-top:3px; color:var(--muted); }.recognition-state { display:inline-flex; justify-content:center; padding:4px 6px; border:1px solid currentColor; border-radius:3px; font-size:11px; }.recognition-state.included { color:var(--green); background:#edf7f4; }.recognition-state.pending { color:var(--orange); background:#fff8ed; }
+.advanced-section { padding:0; }.advanced-section > details > summary { display:flex; justify-content:space-between; align-items:center; gap:18px; padding:16px 20px; cursor:pointer; list-style-position:inside; background:#fafcfc; }.advanced-section > details > summary div { display:inline-flex; flex-direction:column; gap:3px; margin-left:4px; vertical-align:middle; }.advanced-section > details > summary span,.advanced-section > details > summary small { color:var(--muted); font-size:12px; font-weight:400; }.advanced-body { padding:18px 20px 20px; border-top:1px solid var(--line); }
+.division-tree { display:grid; gap:8px; }.division-node,.subdivision-node { border:1px solid var(--line); background:#fff; }.tree-summary { display:flex; align-items:center; gap:9px; min-height:40px; padding:8px 12px; color:var(--ink); }.division-summary { min-height:46px; padding:10px 14px; background:#f7f9fa; }.tree-summary small { margin-left:auto; color:var(--muted); }.division-node input,.subdivision-node input { flex:0 0 auto; width:auto; height:auto; margin:0; }.tree-toggle { display:flex; align-items:center; gap:8px; flex:1; padding:0; border:0; background:transparent; color:var(--ink); text-align:left; }.chevron { width:12px; color:var(--green); font-size:18px; line-height:1; }.subdivision-list { display:grid; gap:7px; padding:10px 14px 14px 38px; }.work-item-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px 10px; padding:10px 12px 12px 38px; border-top:1px solid var(--line); }.work-item-grid label { display:flex; align-items:flex-start; gap:7px; margin:0; padding:6px 8px; color:var(--ink); line-height:1.35; }.section-hint { margin:-7px 0 13px; }
+.review-panel { background:var(--paper); border:1px solid var(--line); }.review-status { display:flex; justify-content:space-between; align-items:center; gap:18px; padding:16px; border-bottom:1px solid var(--line); }.review-status strong { display:block; margin-bottom:5px; }.review-status .primary { flex:0 0 auto; }.primary:disabled { cursor:not-allowed; opacity:.45; }.review-checks { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }.review-check { padding:14px 16px; border-right:1px solid var(--line); }.review-check:last-child { border-right:0; }.review-check small { color:var(--muted); display:block; margin-bottom:5px; }.review-ready { color:var(--green); }.review-missing { color:var(--red); }
+.process-library { display:grid; gap:18px; }.process-stage h3 { font-size:15px; margin:0 0 8px; }.process-stage-list { display:grid; gap:8px; }.process-package { background:var(--paper); border:1px solid var(--line); }.process-package summary { cursor:pointer; padding:13px 15px; font-weight:600; display:flex; justify-content:space-between; }.process-package summary span { color:var(--muted); font-weight:400; font-size:12px; }.process-table-shell { overflow:auto; }.process-table { width:100%; min-width:820px; border-collapse:collapse; }.process-table th,.process-table td { text-align:left; border-top:1px solid var(--line); padding:9px 14px; font-size:12px; }.process-table th { color:var(--muted); background:#f7f9fa; }.process-dialog { width:min(720px,calc(100vw - 32px)); max-height:calc(100vh - 40px); padding:0; border:0; border-radius:6px; box-shadow:0 18px 50px rgba(25,42,48,.25); }.process-dialog::backdrop { background:rgba(24,38,43,.42); }.process-form { background:var(--paper); padding:20px; }.dialog-heading { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }.dialog-heading h3 { margin:0; font-size:19px; }.icon-button { width:34px; height:34px; padding:0; border:1px solid var(--line); border-radius:4px; background:#fff; color:var(--muted); font-size:22px; line-height:1; }.logic-fields { border:1px solid var(--line); margin:4px 0 12px; padding:12px 14px 4px; }.logic-fields legend { color:var(--green); font-size:12px; font-weight:600; padding:0 5px; }.form-note { color:var(--muted); font-size:12px; line-height:1.5; }.dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+.tabs { display:flex; gap:18px; border-bottom:1px solid var(--line); margin-bottom:16px; }.tab { border:0; background:transparent; padding:9px 2px; color:var(--muted); }.tab.active { color:var(--green); border-bottom:2px solid var(--green); font-weight:600; }.view { display:none; }.view.active { display:block; }.legend { color:var(--muted); margin-bottom:10px; font-size:12px; }.critical-dot,.normal-dot { display:inline-block; height:8px; width:8px; border-radius:50%; margin:0 5px 0 12px; }.critical-dot { background:var(--red); margin-left:0; }.normal-dot { background:var(--green); }
+.gantt-toolbar { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:10px; }.gantt-toolbar .legend { margin:0; }.gantt-actions { display:flex; gap:8px; }.gantt-shell { overflow:auto; background:var(--paper); border:1px solid var(--line); }.gantt-shell table { border-collapse:collapse; min-width:100%; font-size:12px; }.gantt-shell th { position:sticky; top:0; z-index:2; background:#eef3f4; color:var(--muted); font-weight:600; }.gantt-shell th,.gantt-shell td { border-bottom:1px solid var(--line); padding:7px 8px; white-space:nowrap; text-align:left; }.gantt-shell th:nth-child(n+8),.gantt-shell td:nth-child(n+8) { min-width:26px; padding:0; text-align:center; }.gantt-shell th:nth-child(1) { min-width:74px; }.gantt-shell th:nth-child(2) { min-width:270px; }.wbs-row.summary-row { background:#f7f9fa; font-weight:600; }.wbs-row.level-1 { background:#e8f0ef; }.wbs-row.level-2 { background:#eef4f3; }.wbs-row.level-3 { background:#f4f7f8; }.wbs-name { max-width:360px; }.wbs-name > span { display:inline-block; max-width:290px; overflow:hidden; text-overflow:ellipsis; vertical-align:middle; }.wbs-name { padding-left:calc(8px + (var(--wbs-level) - 1) * 17px) !important; }.wbs-toggle { display:inline-grid; place-items:center; width:21px; height:21px; margin-right:5px; padding:0; border:0; background:transparent; color:var(--green); font-size:17px; vertical-align:middle; }.wbs-leaf { display:inline-block; width:26px; }.bar { display:block; height:16px; margin:4px 1px; background:var(--green); border-radius:2px; }.bar.critical { background:var(--red); }.bar.condition { background:var(--orange); }.bar.summary-bar { height:10px; margin-top:7px; margin-bottom:7px; opacity:.72; border-radius:1px; }
+.network-controls { display:flex; justify-content:flex-end; margin:0 0 10px; }.network-controls label { width:180px; margin:0; }
+.network-list,.issues-list,.mapping-list,.zone-list,.resource-list,.scenario-list { background:var(--paper); border:1px solid var(--line); }.network-row,.issue { padding:12px 14px; border-bottom:1px solid var(--line); }.network-row:last-child,.issue:last-child { border-bottom:0; }.network-row strong { display:block; margin-bottom:4px; }.network-row span,.issue p { color:var(--muted); font-size:12px; line-height:1.5; }.issue.warn { border-left:3px solid var(--orange); }.issue.error { border-left:3px solid var(--red); }.empty { padding:24px; color:var(--muted); }
+.network-list { overflow:auto; }.network-diagram { display:block; min-width:100%; background:#fff; }.network-legend { position:sticky; left:0; display:flex; gap:22px; padding:11px 14px; border-bottom:1px solid var(--line); color:var(--muted); font-size:12px; }.network-legend span { display:flex; align-items:center; gap:7px; }.network-legend i { display:inline-block; width:28px; height:0; border-top:2px solid #61727c; }.network-legend i.dummy { border-top-style:dashed; border-color:#aab4ba; }.network-legend i.critical { border-color:var(--red); }.aoa-dummy { stroke:#aab4ba; stroke-width:1.2; stroke-dasharray:5 4; fill:none; }.aoa-activity line { stroke:#61727c; stroke-width:2; }.aoa-activity circle { fill:#fff; stroke:#61727c; stroke-width:1.5; }.aoa-activity text { fill:var(--ink); font-family:"Microsoft YaHei",sans-serif; font-size:11px; }.aoa-activity .aoa-event { font-size:9px; font-weight:600; }.aoa-activity .aoa-duration { fill:var(--muted); font-size:10px; }.aoa-activity.critical line,.aoa-activity.critical circle { stroke:var(--red); stroke-width:2.5; }.aoa-activity.condition line { stroke:var(--orange); }.network-caption { position:sticky; left:0; padding:11px 14px; color:var(--muted); font-size:12px; border-top:1px solid var(--line); }
+.mapping-row { display:grid; grid-template-columns:minmax(180px,2fr) minmax(70px,.7fr) minmax(80px,.8fr) minmax(140px,1fr) minmax(90px,.8fr); gap:12px; align-items:center; padding:10px 14px; border-bottom:1px solid var(--line); }.mapping-row.header { background:#eef3f4; color:var(--muted); font-size:12px; font-weight:600; }.mapping-row select { margin:0; }.mapping-note { padding:12px 14px; color:var(--muted); font-size:12px; line-height:1.5; border-bottom:1px solid var(--line); }
+.zone-row { display:grid; grid-template-columns:minmax(150px,1.4fr) minmax(110px,.8fr) minmax(130px,.9fr) minmax(110px,.7fr); gap:12px; align-items:end; padding:12px 14px; border-bottom:1px solid var(--line); }.zone-row label { margin:0; }.zone-row.header { background:#eef3f4; color:var(--muted); font-size:12px; font-weight:600; align-items:center; }.zone-note { padding:12px 14px; color:var(--muted); font-size:12px; line-height:1.5; border-bottom:1px solid var(--line); }
+.zone-actions { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:12px 14px; color:var(--muted); font-size:12px; background:#f7f9fa; }.zone-actions .primary { flex:0 0 auto; }
+.resource-row { display:grid; grid-template-columns:minmax(160px,1.3fr) 100px 110px minmax(220px,2fr); gap:12px; padding:12px 14px; border-bottom:1px solid var(--line); align-items:center; }.resource-row.header { background:#eef3f4; color:var(--muted); font-size:12px; font-weight:600; }.resource-note { padding:12px 14px; color:var(--muted); font-size:12px; line-height:1.5; border-bottom:1px solid var(--line); }
+.drawing-toolbar { display:flex; justify-content:flex-end; margin-bottom:10px; }.drawing-toolbar label { width:240px; }.drawing-list { background:var(--paper); border:1px solid var(--line); }.drawing-row { display:grid; grid-template-columns:minmax(230px,2fr) 130px 140px minmax(180px,1.5fr); gap:12px; padding:12px 14px; align-items:center; border-bottom:1px solid var(--line); }.drawing-row.header { background:#eef3f4; color:var(--muted); font-size:12px; font-weight:600; }.drawing-row select { margin:0; }.drawing-note,.export-note { color:var(--muted); line-height:1.6; font-size:13px; }.drawing-note { padding:12px 14px; border-bottom:1px solid var(--line); }.export-actions { display:flex; gap:10px; margin-bottom:14px; }.export-actions .primary { width:auto; }.export-actions .secondary { font-weight:600; }
+.scenario-row { display:grid; grid-template-columns:minmax(180px,1.4fr) minmax(160px,1.3fr) 110px 110px 90px; gap:12px; padding:12px 14px; border-bottom:1px solid var(--line); align-items:center; }.scenario-row.header { background:#eef3f4; color:var(--muted); font-size:12px; font-weight:600; }.scenario-note { padding:12px 14px; color:var(--muted); font-size:12px; line-height:1.5; border-bottom:1px solid var(--line); }.scenario-row button { border:1px solid var(--green); background:#fff; color:var(--green); border-radius:4px; padding:6px 9px; }
+@media (max-width:850px) { .mapping-row,.zone-row,.resource-row,.scenario-row,.drawing-row { grid-template-columns:1fr 1fr; }.mapping-row.header,.zone-row.header,.resource-row.header,.scenario-row.header,.drawing-row.header { display:none; } }
+@media (max-width:1100px) { .config-grid.four { grid-template-columns:repeat(2,minmax(0,1fr)); }.feature-grid,.major-quick-list,.work-item-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.summary { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media (max-width:1000px) { .input-grid,body[data-workflow="create"] .input-grid { grid-template-columns:1fr; }.configure-summary,.review-checks { grid-template-columns:1fr; }.review-check { border-right:0; border-bottom:1px solid var(--line); } }
+@media (max-width:850px) { .summary { grid-template-columns:1fr 1fr; }.workspace { padding:18px; }.module-heading { align-items:flex-start; flex-direction:column; } }
+@media (max-width:720px) { .template-row { grid-template-columns:1fr; align-items:stretch; }.template-row .secondary { justify-self:start; }.recognition-note { flex-direction:column; }.recognition-note small { text-align:left; }.recognition-row { grid-template-columns:70px minmax(0,1fr); }.recognition-row button { grid-column:2; justify-self:start; } }
+@media (max-width:620px) { .workflow-switch,.two-fields,.config-grid.four,.feature-grid,.major-quick-list,.work-item-grid { grid-template-columns:1fr; }.workflow-button { min-height:58px; }.config-actions,.review-status,.material-actions,.gantt-toolbar { align-items:flex-start; flex-direction:column; }.config-actions .hint { max-width:none; }.subdivision-list,.work-item-grid { padding-left:12px; }.advanced-section > details > summary { align-items:flex-start; }.advanced-section > details > summary small { white-space:nowrap; } }
+@media print { .config-panel,.app-header,.tabs,.network-controls,.drawing-toolbar,.export-actions { display:none !important; } .layout { display:block; } .workspace { padding:0; } .view { display:none !important; } .view.active { display:block !important; } .gantt-shell { border:0; overflow:visible; } }
+
+</style>
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">单机离线原型</p>
+      <h1>施工进度计划</h1>
+    </div>
+    <div class="header-actions"><span id="status" class="status">正在载入工序库</span><button id="saveProject" class="header-button">保存项目</button></div>
+  </header>
+
+  <main class="layout">
+    <section class="workspace">
+      <div class="workflow-switch" aria-label="工作模式">
+        <button class="workflow-button active" data-workflow="create"><strong>新建进度计划</strong><span>根据图纸、清单和项目配置生成计划</span></button>
+        <button class="workflow-button" data-workflow="audit"><strong>审核既有进度计划</strong><span>独立辅助功能：对既有计划进行对比审查</span></button>
+      </div>
+      <nav class="module-nav" aria-label="功能模块">
+        <button class="module-tab active" data-module="configure" data-context="create">手动配置</button>
+        <button class="module-tab" data-module="materials" data-context="shared">资料输入</button>
+        <button class="module-tab" data-module="library" data-context="shared">工序库</button>
+        <button class="module-tab" data-module="generate" data-context="create">计划生成</button>
+        <button class="module-tab" data-module="outputs" data-context="create">成果输出</button>
+        <button class="module-tab" data-module="review" data-context="audit">计划审查</button>
+      </nav>
+      <section id="configureModule" class="module-panel active">
+        <div class="module-heading"><div><p class="eyebrow">手动配置</p><h2>项目、工期、工程特征与资源</h2></div><span class="module-hint">所有参数按分组统一配置，工程特征变化会立即重算工序</span></div>
+        <div class="config-panel">
+          <section class="config-section"><h3>项目基本信息</h3><div class="config-grid four"><label>项目名称<input id="projectName" value="小学建设项目"></label><label>地区<select id="region"><option>上海</option><option>江苏</option><option>浙江</option></select></label><label>楼栋数量<input id="buildingCount" type="number" min="1" max="10" value="1"></label><label>地上层数<input id="floorCount" type="number" min="1" max="60" value="5"></label></div></section>
+          <section class="config-section"><h3>合同工期</h3><div class="config-grid four"><label>开工日期<input id="startDate" type="date" value="2026-10-01"></label><label>竣工日期<input id="finishDate" type="date" value="2027-09-30"></label><label>总日历天数<input id="totalCalendarDays" type="number" min="1" value="365"></label><label>支撑强度间隔（天）<input id="supportWaitDays" type="number" min="0" max="60" value="7"></label></div><p class="hint">竣工日期与总日历天数自动联动；计划超出合同工期时在计划检查中提示。</p></section>
+          <section class="config-section"><h3>快速范围配置</h3><div class="template-row"><label>项目类型<select id="projectType"><option value="school">学校</option><option value="residential">住宅</option><option value="office">办公楼</option><option value="industrial">工业厂房</option></select></label><button id="applyProjectTemplate" type="button" class="secondary compact">应用项目模板</button><span class="hint">模板用于预选常见范围，之后再由图纸和清单校正。</span></div><div id="majorQuickList" class="major-quick-list"></div></section>
+          <section class="config-section"><h3>专项工程与施工条件</h3><div id="specialFeatureList" class="feature-grid"></div></section>
+          <section class="config-section"><h3>图纸与清单识别确认</h3><div id="recognitionPanel" class="recognition-panel"></div></section>
+          <section class="config-section advanced-section"><details><summary><div><strong>完整分部分项目录（高级配置）</strong><span>按 GB 50300-2013 附录B精细调整</span></div><small id="advancedSelectionCount"></small></summary><div class="advanced-body"><p class="hint section-hint">分部 → 子分部 → 分项工程。仅在模板或识别结果需要修正时展开使用。</p><div id="majorFeatureList" class="division-tree"></div></div></details></section>
+          <section class="config-section"><h3>资源与功效</h3><div class="config-grid four"><label>钢筋班组<input id="rebarTeams" type="number" min="1" value="1"></label><label>模板班组<input id="formworkTeams" type="number" min="1" value="1"></label><label>砌筑班组<input id="masonryTeams" type="number" min="1" value="1"></label><label>抹灰班组<input id="plasterTeams" type="number" min="1" value="1"></label><label>机电班组<input id="mepTeams" type="number" min="1" value="1"></label><label>模板套数<input id="templateSets" type="number" min="1" value="1"></label><label>钢筋功效 t/班组/天<input id="rebarRate" type="number" min="0.1" step="0.1" value="3"></label><label>砌筑功效 m³/班组/天<input id="masonryRate" type="number" min="1" value="30"></label><label>抹灰功效 m²/班组/天<input id="plasterRate" type="number" min="1" value="250"></label><label>地下施工区数量<input id="zoneCount" type="number" min="0" max="20" value="2"></label></div></section>
+          <div class="config-actions"><span id="featureTaskHint" class="hint"></span><button id="generate" class="primary compact">生成/更新基准计划</button></div>
+        </div>
+      </section>
+      <section id="materialsModule" class="module-panel">
+        <div class="module-heading"><div><p class="eyebrow">资料输入</p><h2>项目资料中心</h2></div><span class="module-hint">同一项目的图纸、清单和既有计划在这里统一管理</span></div>
+        <div class="input-grid">
+          <div class="input-card"><h3>关键图纸资料</h3><label>添加 DWG / PDF / DXF<input id="drawingFiles" type="file" multiple accept=".dwg,.pdf,.dxf,application/pdf"></label><p class="hint">建筑/结构说明、总平/首层、基础/围护、地下室后浇带、标准层/屋面结构平面。</p><div id="drawingList" class="drawing-list"></div></div>
+          <div class="input-card"><h3>工程量清单</h3><label>导入 CSV（单文件版）<input id="quantityFile" type="file" accept=".csv,text/csv"></label><p id="quantityInfo" class="hint">字段：项目名称、项目特征描述、计量单位、工程量。</p><button type="button" class="secondary" onclick="openPlanView('mapping')">确认清单映射</button></div>
+          <div class="input-card audit-only"><h3>既有进度计划</h3><label>导入 MPP / Excel / PDF<input id="existingPlanFile" type="file" accept=".mpp,.xlsx,.xls,.pdf"></label><p id="existingPlanInfo" class="hint">审核既有计划时，必须同时关联本项目的图纸与清单。</p><button type="button" class="secondary" onclick="switchModule('review')">进入计划审查</button></div>
+        </div>
+        <div class="material-actions create-only"><div><strong>配置和资料确认完成</strong><span id="generationReadiness">系统将按照当前分部分项、工序逻辑、工程量和资源生成计划。</span></div><button id="startGeneration" type="button" class="primary compact">资料确认并生成进度计划</button></div>
+      </section>
+      <section id="reviewModule" class="module-panel"><div class="module-heading"><div><p class="eyebrow">既有计划审查</p><h2>计划与图纸、清单对比</h2></div></div><div id="reviewPanel" class="review-panel"></div></section>
+      <section id="libraryModule" class="module-panel"><div class="module-heading"><div><p class="eyebrow">工序库</p><h2>分层工序知识库</h2></div><button id="addProcessButton" class="primary compact">手工添加工序</button></div><div id="processLibrary" class="process-library"></div></section>
+      <div class="summary" id="summary"></div>
+      <nav class="tabs" aria-label="计划视图">
+        <button class="tab active" data-view="gantt">甘特图</button>
+        <button class="tab" data-view="zones">施工区</button>
+        <button class="tab" data-view="mapping">清单映射</button>
+        <button class="tab" data-view="resources">资源流水</button>
+        <button class="tab" data-view="scenarios">方案对比</button>
+        <button class="tab" data-view="network">网络逻辑</button>
+        <button class="tab" data-view="issues">计划检查</button>
+        <button class="tab" data-view="exports">成果导出</button>
+      </nav>
+      <section id="ganttView" class="view active">
+        <div class="gantt-toolbar"><div class="legend"><span class="critical-dot"></span>关键任务 <span class="normal-dot"></span>一般任务</div><div class="gantt-actions"><button type="button" class="secondary compact" onclick="expandAllGantt()">展开全部</button><button type="button" class="secondary compact" onclick="collapseGanttToLevel2()">折叠至二级</button></div></div>
+        <div class="gantt-shell"><table id="ganttTable"><thead></thead><tbody></tbody></table></div>
+      </section>
+      <section id="zonesView" class="view">
+        <div id="zoneList" class="zone-list"></div>
+      </section>
+      <section id="mappingView" class="view">
+        <div id="mappingList" class="mapping-list"></div>
+      </section>
+      <section id="resourcesView" class="view">
+        <div id="resourceList" class="resource-list"></div>
+      </section>
+      <section id="scenariosView" class="view">
+        <div id="scenarioList" class="scenario-list"></div>
+      </section>
+      <section id="networkView" class="view">
+        <div class="network-controls"><label>网络范围<select id="networkScope"><option value="critical">关键线路</option><option value="all">全部任务</option></select></label></div>
+        <div id="networkList" class="network-list"></div>
+      </section>
+      <section id="issuesView" class="view">
+        <div id="issuesList" class="issues-list"></div>
+      </section>
+      <section id="exportsView" class="view">
+        <div class="export-actions">
+          <button id="exportCsv" class="primary">导出计划 CSV</button>
+          <button id="exportJson" class="secondary">导出计划 JSON</button>
+          <button id="exportMpp" class="secondary" disabled title="当前本机 Microsoft Project 自动化接口无法创建空白项目">导出 Project MPP（待修复）</button>
+          <button id="printPlan" class="secondary">打印/保存 PDF</button>
+        </div>
+        <p class="export-note">CSV 可用 Excel 打开；PDF 通过浏览器打印功能保存。当前本机 Microsoft Project 自动化接口无法创建空白项目，MPP 导出暂不启用。</p>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="processDialog" class="process-dialog">
+    <form id="processForm" class="process-form">
+      <div class="dialog-heading"><div><p class="eyebrow">工序库维护</p><h3>手工添加工序</h3></div><button class="icon-button" type="button" id="cancelProcess" aria-label="关闭">×</button></div>
+      <div class="two-fields"><label>所属阶段<select id="customStage" required><option>1. 施工准备</option><option>2. 地基基础与地下结构</option><option>3. 主体与二次结构</option><option>4. 屋面、外立面与装修</option><option>5. 机电安装</option><option>6. 市政与景观</option><option>7. 验收与移交</option><option>8. 自定义工序</option></select></label><label>专业/工序包<input id="customDiscipline" required placeholder="例如：结构专项"></label></div>
+      <div class="two-fields"><label>工序名称<input id="customName" required placeholder="例如：转换层模板施工"></label><label>默认工期（天）<input id="customDuration" type="number" min="1" value="3" required></label></div>
+      <div class="two-fields"><label>展开范围<select id="customScope"><option value="project">项目</option><option value="building">楼栋</option><option value="zone">施工区</option><option value="floor">楼层</option></select></label><label>适用条件<input id="customFeature" placeholder="可留空，或填写 basement 等特征"></label></div>
+      <fieldset class="logic-fields"><legend>前后逻辑关系（必填）</legend><label>前置工序：插入到该工序之后<select id="customPredecessor" required></select></label><div class="two-fields"><label>前置关系类型<select id="customRelation"><option value="FS">完成-开始（FS）</option><option value="SS">开始-开始（SS）</option><option value="FF">完成-完成（FF）</option></select></label><label>间隔时间（天）<input id="customLag" type="number" min="0" value="0"></label></div><label>后续工序：本工序完成后衔接到<select id="customSuccessor" required></select></label></fieldset>
+      <p class="form-note">新增工序必须接入现有网络；保存后将立即重新计算日期、关键线路和资源流水。</p>
+      <div class="dialog-actions"><button class="secondary compact" type="button" id="cancelProcessBottom">取消</button><button class="primary compact" type="submit">保存并重新计算</button></div>
+    </form>
+  </dialog>
+
+  <script>
+window.PROCESS_LIBRARY = {
+  "schemaVersion": "0.1",
+  "library": {
+    "name": "常规房建施工进度工序库",
+    "applicableRegions": ["上海", "江苏", "浙江"],
+    "note": "初始通用工序库。地区规范条款、版本和项目特殊做法以后续规则包覆盖。"
+  },
+  "resources": [
+    "survey_team", "temporary_works_team", "pile_team", "earthwork_team", "support_team", "waterproof_team",
+    "rebar_team", "formwork_team", "concrete_team", "masonry_team", "plaster_team", "painting_team",
+    "mep_team", "facade_team", "roofing_team", "landscape_team", "tower_crane", "construction_hoist",
+    "concrete_pump", "template_set", "shoring_set", "scaffold_set", "work_face"
+  ],
+  "conditionRules": [
+    {"id":"design_strength","name":"达到设计强度条件","source":"地区规则包/设计说明","blocking":true},
+    {"id":"concealed_acceptance","name":"隐蔽验收完成","source":"工艺规则","blocking":true},
+    {"id":"substrate_acceptance","name":"基层验收完成","source":"工艺规则","blocking":true},
+    {"id":"water_test","name":"蓄水或淋水试验合格","source":"工艺规则","blocking":true},
+    {"id":"equipment_test","name":"设备检测验收合格","source":"工艺规则","blocking":true}
+  ],
+  "packages": [
+    {
+      "id":"preparation",
+      "name":"项目准备与临建",
+      "scope":"project",
+      "features":[],
+      "tasks":[
+        ["site_handover","项目进场/场地移交","fixed",1,["work_face"]],
+        ["temporary_works","临建施工","fixed",10,["temporary_works_team"]],
+        ["temporary_utilities","临水临电施工","fixed",7,["mep_team"]],
+        ["survey_network","测量控制网建立","fixed",3,["survey_team"]],
+        ["site_roads","施工道路、排水及洗车设施","fixed",7,["earthwork_team"]],
+        ["tower_crane_base","塔吊基础施工","fixed",7,["formwork_team","concrete_team"]],
+        ["tower_crane_install","塔吊安装及检测","fixed",5,["tower_crane"]]
+      ],
+      "chains":[["site_handover","temporary_works","temporary_utilities"],["site_handover","survey_network"],["site_handover","site_roads"],["tower_crane_base","tower_crane_install"]],
+      "conditionalLinks":[{"from":"tower_crane_base","to":"tower_crane_install","condition":"design_strength"}]
+    },
+    {
+      "id":"pile_and_excavation",
+      "name":"桩基与基坑工程",
+      "scope":"zone",
+      "features":["pile_foundation","retaining_structure","support_system","dewatering"],
+      "tasks":[
+        ["retaining_pile","围护桩施工","fixed",20,["pile_team"]],
+        ["retaining_test","围护桩检测","fixed",5,["pile_team"]],
+        ["engineering_pile","工程桩施工","fixed",20,["pile_team"]],
+        ["engineering_pile_test","工程桩检测","fixed",7,["pile_team"]],
+        ["soil_improvement","基坑土体加固","fixed",10,["pile_team"]],
+        ["dewatering_well","降水井施工及试抽","fixed",7,["earthwork_team"]],
+        ["dewatering_run","正式降水及运行维护","fixed",1,["earthwork_team"]],
+        ["surface_excavation","表层土开挖","fixed",5,["earthwork_team"]],
+        ["support_l1","第一层支撑梁施工","fixed",10,["support_team","concrete_team"]],
+        ["support_l1_wait","第一层支撑强度条件","condition",0,[]],
+        ["excavation_l2","第二层土方开挖","fixed",7,["earthwork_team"]],
+        ["support_l2","第二层支撑梁施工","fixed",10,["support_team","concrete_team"]],
+        ["support_l2_wait","第二层支撑强度条件","condition",0,[]],
+        ["foundation_excavation","基础土方开挖","fixed",7,["earthwork_team"]],
+        ["manual_trim","人工清槽","fixed",3,["earthwork_team"]],
+        ["foundation_inspection","验槽","fixed",1,["survey_team"]]
+      ],
+      "chains":[["retaining_pile","retaining_test","engineering_pile","engineering_pile_test"],["soil_improvement","surface_excavation"],["dewatering_well","dewatering_run","surface_excavation","support_l1","support_l1_wait","excavation_l2","support_l2","support_l2_wait","foundation_excavation","manual_trim","foundation_inspection"],["engineering_pile_test","surface_excavation"]],
+      "conditionalLinks":[{"from":"support_l1","to":"support_l1_wait","condition":"design_strength"},{"from":"support_l2","to":"support_l2_wait","condition":"design_strength"}]
+    },
+    {
+      "id":"basement_structure",
+      "name":"基础与地下结构",
+      "scope":"zone",
+      "features":["basement"],
+      "tasks":[
+        ["pile_head_treatment","桩头处理","fixed",3,["earthwork_team"]],
+        ["blinding","垫层施工","fixed",2,["concrete_team"]],
+        ["base_waterproof","基础防水施工","fixed",4,["waterproof_team"]],
+        ["waterproof_protection","防水保护层施工","fixed",2,["concrete_team"]],
+        ["slab_rebar","底板钢筋绑扎","productivity",0,["rebar_team"]],
+        ["slab_mep_embed","底板水电预留预埋","fixed",2,["mep_team"]],
+        ["slab_concealed","底板隐蔽验收","fixed",1,[]],
+        ["slab_concrete","底板混凝土浇筑","fixed",1,["concrete_team","concrete_pump"]],
+        ["wall_column_rebar","地下墙柱钢筋绑扎","productivity",0,["rebar_team"]],
+        ["wall_column_embed","地下墙柱预留预埋","fixed",2,["mep_team"]],
+        ["wall_column_form","地下墙柱模板施工","fixed",3,["formwork_team","template_set"]],
+        ["wall_column_concrete","地下墙柱混凝土浇筑","fixed",1,["concrete_team","concrete_pump"]],
+        ["top_shoring","顶板支模架搭设","fixed",3,["formwork_team","shoring_set"]],
+        ["top_form","顶板模板铺设","fixed",3,["formwork_team","template_set"]],
+        ["top_rebar","顶板钢筋绑扎","productivity",0,["rebar_team"]],
+        ["top_mep_embed","顶板水电/人防预留预埋","fixed",2,["mep_team"]],
+        ["top_concealed","顶板隐蔽验收","fixed",1,[]],
+        ["top_concrete","顶板混凝土浇筑","fixed",1,["concrete_team","concrete_pump"]],
+        ["post_pour_closure","后浇带封闭","fixed",2,["concrete_team"]],
+        ["outer_wall_backfill","地下外墙回填","fixed",5,["earthwork_team"]]
+      ],
+      "chains":[["pile_head_treatment","blinding","base_waterproof","waterproof_protection","slab_rebar","slab_mep_embed","slab_concealed","slab_concrete","wall_column_rebar","wall_column_embed","wall_column_form","wall_column_concrete","top_shoring","top_form","top_rebar","top_mep_embed","top_concealed","top_concrete"],["top_concrete","outer_wall_backfill"]],
+      "conditionalLinks":[{"from":"slab_mep_embed","to":"slab_concealed","condition":"concealed_acceptance"},{"from":"top_mep_embed","to":"top_concealed","condition":"concealed_acceptance"},{"from":"top_concrete","to":"post_pour_closure","condition":"design_strength"}]
+    },
+    {
+      "id":"superstructure_cycle",
+      "name":"地上主体标准层循环",
+      "scope":"floor",
+      "features":["superstructure"],
+      "tasks":[
+        ["setting_out","测量放线","fixed",1,["survey_team"]],
+        ["floor_shoring","支模架搭设","fixed",2,["formwork_team","shoring_set"]],
+        ["column_rebar","墙柱钢筋绑扎","productivity",0,["rebar_team"]],
+        ["column_embed","墙柱水电预留预埋","fixed",1,["mep_team"]],
+        ["column_form","墙柱模板铺设","fixed",2,["formwork_team","template_set"]],
+        ["column_concealed","墙柱隐蔽验收","fixed",1,[]],
+        ["column_concrete","墙柱混凝土浇筑","fixed",1,["concrete_team","concrete_pump"]],
+        ["beam_slab_form","梁板模板铺设","fixed",2,["formwork_team","template_set"]],
+        ["bottom_rebar","梁板底筋绑扎","productivity",0,["rebar_team"]],
+        ["slab_embed","水电管线预留预埋","fixed",1,["mep_team"]],
+        ["top_rebar","顶板面筋绑扎","productivity",0,["rebar_team"]],
+        ["slab_concealed","梁板隐蔽验收","fixed",1,[]],
+        ["slab_concrete","顶板混凝土浇筑","fixed",1,["concrete_team","concrete_pump"]],
+        ["curing_stripping","养护及拆模条件","condition",0,[]],
+        ["hoist_install","施工电梯安装及检测","fixed",5,["construction_hoist"]]
+      ],
+      "chains":[["setting_out","floor_shoring","column_rebar","column_embed","column_form","column_concealed","column_concrete","beam_slab_form","bottom_rebar","slab_embed","top_rebar","slab_concealed","slab_concrete","curing_stripping"]],
+      "conditionalLinks":[{"from":"column_embed","to":"column_concealed","condition":"concealed_acceptance"},{"from":"slab_embed","to":"slab_concealed","condition":"concealed_acceptance"},{"from":"slab_concrete","to":"curing_stripping","condition":"design_strength"},{"from":"hoist_install","to":"curing_stripping","condition":"equipment_test"}]
+    },
+    {
+      "id":"secondary_structure",
+      "name":"二次结构与结构验收",
+      "scope":"floor",
+      "features":["masonry"],
+      "tasks":[
+        ["masonry_setting_out","砌筑放线","fixed",1,["survey_team"]],
+        ["bar_planting","植筋","fixed",1,["masonry_team"]],
+        ["wall_masonry","墙体砌筑","productivity",0,["masonry_team"]],
+        ["secondary_embed","二次结构机电配管/箱盒","fixed",1,["mep_team"]],
+        ["tie_rebar","构造柱圈梁钢筋绑扎","productivity",0,["rebar_team"]],
+        ["tie_form","构造柱圈梁模板","fixed",1,["formwork_team"]],
+        ["tie_concrete","构造柱圈梁浇筑","fixed",1,["concrete_team"]],
+        ["structural_acceptance","结构验收","fixed",5,[]]
+      ],
+      "chains":[["masonry_setting_out","bar_planting","wall_masonry","secondary_embed","tie_rebar","tie_form","tie_concrete","structural_acceptance"]]
+    },
+    {
+      "id":"roof",
+      "name":"屋面工程",
+      "scope":"building",
+      "features":["roof"],
+      "tasks":[
+        ["roof_substrate","基层处理","fixed",2,["roofing_team"]],
+        ["roof_structural_ponding","结构蓄水","fixed",2,["roofing_team"]],
+        ["roof_levelling","找平施工","fixed",3,["roofing_team"]],
+        ["roof_waterproof","防水施工","fixed",3,["waterproof_team"]],
+        ["roof_ponding","蓄水试验","fixed",2,["waterproof_team"]],
+        ["roof_waterproof_protection","防水保护层施工","fixed",2,["roofing_team"]],
+        ["roof_insulation","保温施工","fixed",2,["roofing_team"]],
+        ["roof_protection","保护层施工","fixed",2,["roofing_team"]],
+        ["roof_finish","面层施工","fixed",3,["roofing_team"]]
+      ],
+      "chains":[["roof_substrate","roof_structural_ponding","roof_levelling","roof_waterproof","roof_ponding","roof_waterproof_protection","roof_insulation","roof_protection","roof_finish"]],
+      "conditionalLinks":[{"from":"roof_waterproof","to":"roof_ponding","condition":"water_test"}]
+    },
+    {
+      "id":"facade",
+      "name":"外墙、门窗、保温与幕墙",
+      "scope":"building",
+      "features":["facade"],
+      "tasks":[
+        ["facade_substrate","外墙基层处理","fixed",2,["facade_team"]],
+        ["facade_guides","灰饼护角施工","fixed",2,["plaster_team"]],
+        ["facade_plaster","砂浆抹灰施工","productivity",0,["plaster_team"]],
+        ["window_frame","窗框安装及塞缝","fixed",4,["facade_team"]],
+        ["facade_putty","外墙腻子施工","fixed",3,["painting_team"]],
+        ["facade_finish","外墙面层施工","fixed",4,["facade_team"]],
+        ["insulation","外墙保温施工","fixed",5,["facade_team"]],
+        ["facade_water_test","外墙淋水试验","fixed",2,["facade_team"]],
+        ["curtain_wall","幕墙施工","fixed",15,["facade_team"]]
+      ],
+      "chains":[["facade_substrate","facade_guides","facade_plaster","window_frame","facade_putty","facade_finish","facade_water_test"],["facade_plaster","insulation","facade_finish"],["facade_substrate","curtain_wall","facade_water_test"]],
+      "conditionalLinks":[{"from":"facade_finish","to":"facade_water_test","condition":"water_test"}]
+    },
+    {
+      "id":"interior_finish",
+      "name":"室内毛坯、精装与公区",
+      "scope":"floor",
+      "features":["interior_finish"],
+      "tasks":[
+        ["wall_substrate","墙面基层处理","fixed",1,["plaster_team"]],
+        ["wall_plaster","墙面抹灰","productivity",0,["plaster_team"]],
+        ["paint_base","油漆基层施工","fixed",2,["painting_team"]],
+        ["putty","腻子施工","fixed",3,["painting_team"]],
+        ["paint_finish","油漆面层施工","fixed",2,["painting_team"]],
+        ["toilet_substrate","卫生间基层处理","fixed",1,["waterproof_team"]],
+        ["toilet_structural_ponding","卫生间结构蓄水","fixed",2,["waterproof_team"]],
+        ["toilet_plaster","卫生间抹灰找平","fixed",2,["plaster_team"]],
+        ["toilet_waterproof","卫生间防水施工","fixed",2,["waterproof_team"]],
+        ["toilet_ponding","卫生间蓄水试验","fixed",2,["waterproof_team"]],
+        ["toilet_pipe","卫生间管道安装","fixed",2,["mep_team"]],
+        ["toilet_finish","卫生间面层施工","fixed",3,["painting_team"]],
+        ["ceiling_mep","吊顶内机电安装","fixed",3,["mep_team"]],
+        ["ceiling_test","吊顶内试验/隐蔽验收","fixed",1,[]],
+        ["ceiling_keel","吊顶龙骨施工","fixed",2,["painting_team"]],
+        ["ceiling_finish","吊顶面层施工","fixed",2,["painting_team"]],
+        ["public_finish","公共区域装修施工","fixed",10,["painting_team"]]
+      ],
+      "chains":[["wall_substrate","wall_plaster","paint_base","putty","paint_finish","public_finish"],["toilet_substrate","toilet_structural_ponding","toilet_plaster","toilet_waterproof","toilet_ponding","toilet_pipe","toilet_finish"],["ceiling_mep","ceiling_test","ceiling_keel","ceiling_finish"]],
+      "conditionalLinks":[{"from":"toilet_waterproof","to":"toilet_ponding","condition":"water_test"},{"from":"ceiling_test","to":"ceiling_keel","condition":"concealed_acceptance"}]
+    },
+    {
+      "id":"mep",
+      "name":"机电安装与调试",
+      "scope":"floor",
+      "features":["plumbing","electrical","fire","ventilation"],
+      "tasks":[
+        ["plumbing_embed","给排水预留预埋","fixed",1,["mep_team"]],
+        ["plumbing_install","给排水管道安装","fixed",3,["mep_team"]],
+        ["plumbing_test","给排水试压/灌水/通球","fixed",1,["mep_team"]],
+        ["electrical_embed","电气预留预埋","fixed",1,["mep_team"]],
+        ["electrical_containment","桥架线管安装","fixed",3,["mep_team"]],
+        ["electrical_cabling","穿线电缆及末端安装","fixed",3,["mep_team"]],
+        ["electrical_test","绝缘及通电试验","fixed",1,["mep_team"]],
+        ["fire_embed","消防预留预埋","fixed",1,["mep_team"]],
+        ["fire_install","消防管网及设备安装","fixed",5,["mep_team"]],
+        ["fire_test","消防试压冲洗","fixed",2,["mep_team"]],
+        ["fire_commissioning","消防单机及联动调试","fixed",5,["mep_team"]],
+        ["vent_embed","通风预留预埋","fixed",1,["mep_team"]],
+        ["vent_install","风管水管及设备安装","fixed",5,["mep_team"]],
+        ["vent_insulation","通风保温","fixed",3,["mep_team"]],
+        ["vent_test","漏风试验及调试","fixed",3,["mep_team"]]
+      ],
+      "chains":[["plumbing_embed","plumbing_install","plumbing_test"],["electrical_embed","electrical_containment","electrical_cabling","electrical_test"],["fire_embed","fire_install","fire_test","fire_commissioning"],["vent_embed","vent_install","vent_insulation","vent_test"]]
+    },
+    {
+      "id":"intelligent_building",
+      "name":"智能建筑系统",
+      "scope":"building",
+      "features":["intelligent"],
+      "tasks":[
+        ["intelligent_conduit","智能化管线预埋","fixed",4,["mep_team"]],
+        ["intelligent_cabling","智能化线缆敷设","fixed",5,["mep_team"]],
+        ["intelligent_equipment","智能化设备安装","fixed",5,["mep_team"]],
+        ["intelligent_commissioning","智能化系统调试","fixed",4,["mep_team"]],
+        ["intelligent_acceptance","智能建筑分部验收","fixed",3,[]]
+      ],
+      "chains":[["intelligent_conduit","intelligent_cabling","intelligent_equipment","intelligent_commissioning","intelligent_acceptance"]]
+    },
+    {
+      "id":"building_energy",
+      "name":"建筑节能工程",
+      "scope":"building",
+      "features":["energy"],
+      "tasks":[
+        ["energy_sample","节能材料样板及复验","fixed",5,[]],
+        ["energy_envelope","围护结构节能施工","fixed",8,["facade_team"]],
+        ["energy_system_test","建筑设备节能检测","fixed",4,["mep_team"]],
+        ["energy_field_test","节能现场实体检验","fixed",3,[]],
+        ["energy_division_acceptance","建筑节能分部验收","fixed",3,[]]
+      ],
+      "chains":[["energy_sample","energy_envelope","energy_field_test","energy_division_acceptance"],["energy_system_test","energy_division_acceptance"]]
+    },
+    {
+      "id":"elevator",
+      "name":"电梯工程",
+      "scope":"building",
+      "features":["elevator"],
+      "tasks":[
+        ["elevator_handover","电梯井道移交","fixed",2,[]],
+        ["elevator_rail","导轨及门套安装","fixed",8,["mep_team"]],
+        ["elevator_machine","曳引机及轿厢安装","fixed",8,["mep_team"]],
+        ["elevator_electrical","电梯电气与控制安装","fixed",5,["mep_team"]],
+        ["elevator_commissioning","电梯调试","fixed",4,["mep_team"]],
+        ["elevator_inspection","电梯监督检验","fixed",5,[]],
+        ["elevator_acceptance","电梯分部验收","fixed",2,[]]
+      ],
+      "chains":[["elevator_handover","elevator_rail","elevator_machine","elevator_electrical","elevator_commissioning","elevator_inspection","elevator_acceptance"]]
+    },
+    {
+      "id":"external_works",
+      "name":"市政、景观与室外工程",
+      "scope":"zone",
+      "features":["municipal","landscape"],
+      "tasks":[
+        ["utility_trench","室外管网沟槽开挖","fixed",3,["earthwork_team"]],
+        ["utility_install","室外管网安装","fixed",5,["mep_team"]],
+        ["utility_test","室外管网试验","fixed",1,["mep_team"]],
+        ["utility_backfill","室外管网回填","fixed",3,["earthwork_team"]],
+        ["road_subgrade","道路路床及基层","fixed",5,["earthwork_team"]],
+        ["road_finish","道路面层施工","fixed",5,["earthwork_team"]],
+        ["landscape_ground","景观场地整理及种植土","fixed",5,["landscape_team"]],
+        ["planting","乔灌木及草坪种植","fixed",7,["landscape_team"]],
+        ["outdoor_lighting","室外照明安装及调试","fixed",5,["mep_team"]],
+        ["sponge_facility","海绵设施施工及验收","fixed",7,["landscape_team"]]
+      ],
+      "chains":[["utility_trench","utility_install","utility_test","utility_backfill"],["road_subgrade","road_finish"],["landscape_ground","planting"]]
+    },
+    {
+      "id":"acceptance",
+      "name":"专项验收、联合验收与移交",
+      "scope":"project",
+      "features":[],
+      "tasks":[
+        ["structure_acceptance","结构验收","fixed",5,[]],
+        ["energy_acceptance","节能专项验收","fixed",5,[]],
+        ["fire_acceptance","消防专项验收","fixed",7,[]],
+        ["civil_defense_acceptance","人防专项验收","fixed",5,[]],
+        ["planning_acceptance","规划专项验收","fixed",5,[]],
+        ["sponge_acceptance","海绵专项验收","fixed",5,[]],
+        ["joint_acceptance","竣工联合验收","fixed",7,[]],
+        ["handover","竣工备案及移交","fixed",5,[]]
+      ],
+      "chains":[["structure_acceptance","joint_acceptance","handover"],["energy_acceptance","joint_acceptance"],["fire_acceptance","joint_acceptance"],["civil_defense_acceptance","joint_acceptance"],["planning_acceptance","joint_acceptance"],["sponge_acceptance","joint_acceptance"]]
+    }
+  ],
+  "conflictRules": [
+    {"id":"slab_embed_rebar","tasks":["slab_embed","top_rebar"],"scope":"same_work_face","mode":"controlled_overlap","requirement":"预埋应在隐蔽验收前完成"},
+    {"id":"concealed_before_concrete","tasks":["slab_concealed","slab_concrete"],"scope":"same_work_face","mode":"must_finish","requirement":"隐蔽验收为混凝土浇筑强制前置"},
+    {"id":"mep_before_ceiling","tasks":["ceiling_mep","ceiling_keel"],"scope":"same_work_face","mode":"must_finish","requirement":"机电试验及隐蔽验收后方可封板"},
+    {"id":"masonry_before_plaster","tasks":["secondary_embed","wall_plaster"],"scope":"same_work_face","mode":"must_finish","requirement":"配管箱盒和封槽完成后方可抹灰"},
+    {"id":"scaffold_shoring","tasks":["floor_shoring","facade_finish"],"scope":"adjacent_work_face","mode":"manual_review","requirement":"外架与支模架按专项方案和相邻作业面审查"},
+    {"id":"shared_template_set","tasks":["beam_slab_form","floor_shoring"],"scope":"shared_resource","mode":"resource_level","requirement":"模板和支模架套数不足时形成资源排队关系"}
+  ],
+  "milestones": ["桩基完成", "基坑开挖完成", "正负零", "主体封顶", "结构验收", "外架拆除", "外立面完成", "专项验收完成", "竣工联合验收", "竣工备案及移交"]
+}
+;
+</script>
+<script>
+const gbGroup = (id, name, items) => ({ id, name, items });
+window.GB50300_CATALOG = [
+  { id:'foundation', name:'地基与基础', groups:[
+    gbGroup('foundation_earthwork','土方工程',['土方开挖','土方回填','场地平整']),
+    gbGroup('foundation_support','基坑支护',['灌注桩排桩围护墙','板桩围护墙','咬合桩围护墙','型钢水泥土搅拌墙','土钉墙','地下连续墙','重力式水泥土墙','内支撑','锚杆','与主体结构相结合的基坑支护']),
+    gbGroup('foundation_groundwater','地下水控制',['降水与排水','回灌']),
+    gbGroup('foundation_ground','地基处理',['素土、灰土地基','砂和砂石地基','土工合成材料地基','粉煤灰地基','强夯地基','注浆地基','预压地基','砂石桩复合地基','高压喷射注浆复合地基','水泥土搅拌桩复合地基','土和灰土挤密桩复合地基','夯实水泥土桩复合地基','水泥粉煤灰碎石桩复合地基','振冲桩复合地基']),
+    gbGroup('foundation_base','基础工程',['无筋扩展基础','钢筋混凝土扩展基础','筏形与箱形基础','钢结构基础','钢管混凝土结构基础','型钢混凝土结构基础','钢筋混凝土预制桩基础','泥浆护壁成孔灌注桩基础','干作业成孔灌注桩基础','长螺旋钻孔压灌桩基础','沉管灌注桩基础','钢桩基础','锚杆静压桩基础']),
+    gbGroup('foundation_waterproof','地下防水',['主体结构防水','细部构造防水','特殊施工法结构防水','排水工程','注浆工程'])
+  ]},
+  { id:'superstructure', name:'主体结构', groups:[
+    gbGroup('structure_concrete','混凝土结构',['模板','钢筋','混凝土','预应力','现浇结构','装配式结构']),
+    gbGroup('structure_masonry','砌体结构',['砖砌体','混凝土小型空心砌块砌体','石砌体','配筋砌体','填充墙砌体']),
+    gbGroup('structure_steel','钢结构',['钢结构焊接','紧固件连接','钢零部件加工','钢构件组装及预拼装','单层钢结构安装','多层及高层钢结构安装','钢网架结构安装','压型金属板','防腐涂料涂装','防火涂料涂装']),
+    gbGroup('structure_steel_tube','钢管混凝土结构',['构件进场验收','构件现场拼装','柱脚锚固','构件安装','柱与混凝土梁连接','钢管内钢筋骨架','钢管内混凝土浇筑']),
+    gbGroup('structure_composite','型钢混凝土结构',['型钢焊接','紧固件连接','型钢与钢筋连接','型钢构件组装及预拼装','型钢安装','模板','混凝土']),
+    gbGroup('structure_aluminum','铝合金结构',['铝合金焊接','紧固件连接','零部件加工','构件组装','构件预拼装','框架及空间网格安装','面板安装','防腐处理']),
+    gbGroup('structure_wood','木结构',['方木和原木结构','胶合木结构','轻型木结构','木结构防护'])
+  ]},
+  { id:'interior_finish', name:'建筑装饰装修', groups:[
+    gbGroup('finish_floor','建筑地面',['基层铺设','整体面层铺设','板块面层铺设','木竹面层铺设']),gbGroup('finish_plaster','抹灰',['一般抹灰','保温层薄抹灰','装饰抹灰','清水砌体勾缝']),gbGroup('finish_external_waterproof','外墙防水',['外墙砂浆防水','涂膜防水','透气膜防水']),gbGroup('finish_doors_windows','门窗',['木门窗制作与安装','金属门窗安装','塑料门窗安装','特种门安装','门窗玻璃安装']),gbGroup('finish_ceiling','吊顶',['整体面层吊顶','板块面层吊顶','格栅吊顶']),gbGroup('finish_partition','轻质隔墙',['板材隔墙','骨架隔墙','活动隔墙','玻璃隔墙']),gbGroup('finish_panel','饰面板',['石板安装','陶瓷板安装','木板安装','金属板安装','塑料板安装']),gbGroup('finish_tile','饰面砖',['内墙饰面砖粘贴','外墙饰面砖粘贴']),gbGroup('finish_curtain_wall','幕墙',['玻璃幕墙安装','金属幕墙安装','石材幕墙安装','陶板幕墙安装']),gbGroup('finish_paint','涂饰',['水性涂料涂饰','溶剂型涂料涂饰','美术涂饰']),gbGroup('finish_wallpaper','裱糊与软包',['裱糊','软包']),gbGroup('finish_detail','细部工程',['橱柜制作与安装','窗帘盒和窗台板制作与安装','门窗套制作与安装','护栏和扶手制作与安装','花饰制作与安装'])
+  ]},
+  { id:'roof', name:'建筑屋面', groups:[
+    gbGroup('roof_base','基层与保护',['找坡层和找平层','隔汽层','隔离层','保护层']),gbGroup('roof_insulation','保温与隔热',['板状材料保温层','纤维材料保温层','喷涂硬泡聚氨酯保温层','现浇泡沫混凝土保温层','种植隔热层','架空隔热层','蓄水隔热层']),gbGroup('roof_waterproof','防水与密封',['卷材防水层','涂膜防水层','复合防水层','接缝密封防水']),gbGroup('roof_tile','瓦面与板面',['烧结瓦和混凝土瓦铺装','沥青瓦铺装','金属板铺装','玻璃采光顶铺装']),gbGroup('roof_detail','细部构造',['檐口','檐沟和天沟','女儿墙和山墙','水落口','变形缝','伸出屋面管道','屋面出入口','反梁过水孔','设施基座','屋脊','屋顶窗'])
+  ]},
+  { id:'plumbing', name:'建筑给水排水及供暖', groups:[
+    gbGroup('plumbing_indoor_supply','室内给水系统',['给水管道及配件安装','室内消火栓系统安装','给水设备安装','管道防腐','绝热']),gbGroup('plumbing_indoor_drainage','室内排水系统',['排水管道及配件安装','雨水管道及配件安装']),gbGroup('plumbing_hot_water','室内热水供应系统',['管道及配件安装','辅助设备安装','防腐与绝热']),gbGroup('plumbing_sanitary','卫生器具',['卫生器具安装','卫生器具给水配件安装','卫生器具排水管道安装']),gbGroup('plumbing_heating','室内供暖系统',['管道及配件安装','辅助设备安装','散热器安装','低温热水地板辐射供暖系统安装','电加热供暖系统安装','热计量及调控装置安装','系统水压试验及调试','防腐与绝热']),gbGroup('plumbing_outdoor_supply','室外给水管网',['给水管道安装','消防水泵接合器及室外消火栓安装','管沟及井室']),gbGroup('plumbing_outdoor_drainage','室外排水管网',['排水管道安装','排水管沟与井池']),gbGroup('plumbing_outdoor_heating','室外供热管网',['管道及配件安装','系统水压试验及调试','防腐与绝热']),gbGroup('plumbing_drinking','建筑饮用水供应系统',['管道及配件安装','水处理设备及控制设施安装','防腐与绝热','系统调试']),gbGroup('plumbing_reclaimed','建筑中水及雨水利用',['建筑中水系统','雨水利用系统管道及配件安装','水处理设备及控制设施安装','系统调试']),gbGroup('plumbing_pool','游泳池及公共浴池水系统',['管道系统安装','水处理设备及控制设施安装','系统调试']),gbGroup('plumbing_water_feature','水景喷泉系统',['管道系统安装','水处理设备及控制设施安装','系统调试']),gbGroup('plumbing_heat_source','热源及辅助设备',['锅炉安装','辅助设备及管道安装','安全附件安装','换热站安装','防腐与绝热','试运行']),gbGroup('plumbing_monitoring','监测与控制仪表',['检测仪器及仪表安装','试运行与调试'])
+  ]},
+  { id:'ventilation', name:'通风与空调', groups:[
+    gbGroup('vent_supply','送风系统',['风管与配件制作','部件制作','风管系统安装','风机与空气处理设备安装','系统调试']),gbGroup('vent_exhaust','排风系统',['风管与配件制作','部件制作','风管系统安装','风机与空气处理设备安装','系统调试']),gbGroup('vent_smoke','防排烟系统',['风管与配件制作','风管系统安装','风机安装','排烟风阀安装','系统调试']),gbGroup('vent_dust','除尘系统',['风管系统安装','除尘器与排污设备安装','系统调试']),gbGroup('vent_comfort','舒适性空调系统',['风管系统安装','空气处理设备安装','消声设备安装','风管与设备绝热','系统调试']),gbGroup('vent_constant','恒温恒湿空调系统',['风管系统安装','空气处理设备安装','加湿器安装','系统调试']),gbGroup('vent_clean','净化空调系统',['风管系统安装','空气处理设备安装','高效过滤器安装','净化设备安装','系统调试']),gbGroup('vent_civil_defense','地下人防通风系统',['风管系统安装','风机安装','过滤吸收器安装','系统调试']),gbGroup('vent_vacuum','真空吸尘系统',['风管与配件安装','风机与滤尘设备安装','系统调试']),gbGroup('vent_condensate','冷凝水系统',['管道系统安装','水泵安装','管道冲洗','防腐与绝热']),gbGroup('vent_air_water','空调水系统',['管道系统安装','水泵及附属设备安装','管道冲洗','压力试验及调试']),gbGroup('vent_cooling','冷却水系统',['管道系统安装','冷却塔与水泵安装','管道冲洗','系统调试']),gbGroup('vent_source','冷热源及辅助设备',['压缩式制冷机组安装','吸收式制冷机组安装','多联机安装','地源热泵机组安装','蓄能设备安装','太阳能供暖空调设备安装','系统调试']),gbGroup('vent_control','设备自控系统',['传感器安装','执行机构安装调试','防排烟功能测试','自动控制软件调试'])
+  ]},
+  { id:'electrical', name:'建筑电气', groups:[
+    gbGroup('electrical_outdoor','室外电气',['箱式变电所安装','配电箱安装','梯架托盘槽盒和导管安装','电缆敷设','灯具安装','接地装置安装']),gbGroup('electrical_transformer','变配电室',['变压器安装','成套配电柜安装','母线槽安装','电缆敷设','接地干线敷设']),gbGroup('electrical_main','供电干线',['电气设备试验和试运行','母线槽安装','梯架托盘槽盒和导管安装','电缆敷设','线路绝缘测试']),gbGroup('electrical_power','电气动力',['动力配电箱安装','电动机及电动执行机构接线','电气设备试验和试运行','电缆敷设','开关插座安装']),gbGroup('electrical_lighting','电气照明',['照明配电箱安装','导管安装','管内穿线','灯具安装','开关插座安装','建筑照明通电试运行']),gbGroup('electrical_backup','备用和不间断电源',['柴油发电机组安装','不间断电源装置安装','母线槽安装','电缆敷设','接地装置安装']),gbGroup('electrical_lightning','防雷及接地',['接地装置安装','防雷引下线及接闪器安装','建筑物等电位连接','浪涌保护器安装'])
+  ]},
+  { id:'intelligent', name:'智能建筑', groups:[
+    gbGroup('intelligent_integration','智能化集成系统',['设备安装','软件安装','接口及系统调试','试运行']),gbGroup('intelligent_information','信息设施系统',['信息接入系统','用户电话交换系统','信息网络系统','综合布线系统','移动通信室内信号覆盖系统','卫星通信系统','有线电视系统','公共广播系统','会议系统','信息导引及发布系统','时钟系统']),gbGroup('intelligent_application','信息化应用系统',['工作业务应用','物业运营管理','公共服务管理','公众信息服务','智能卡应用']),gbGroup('intelligent_bms','建筑设备监控系统',['传感器安装','执行器安装','控制器安装','中央管理工作站安装','软件安装','系统调试','试运行']),gbGroup('intelligent_fire_alarm','火灾自动报警系统',['设备安装','线缆敷设','检测与调试','试运行']),gbGroup('intelligent_security','安全技术防范系统',['综合管理平台','入侵报警系统','视频安防监控系统','出入口控制系统','电子巡查系统','停车库管理系统','访客对讲系统']),gbGroup('intelligent_emergency','应急响应系统',['设备安装','软件安装','系统调试','试运行']),gbGroup('intelligent_room','机房工程',['供配电系统','防雷与接地系统','空气调节系统','给水排水系统','综合布线系统','监控与安全防范系统','消防系统','室内装饰装修','电磁屏蔽']),gbGroup('intelligent_lightning','防雷与接地',['接地装置','接地线','等电位联结','屏蔽设施','电涌保护器','线缆敷设'])
+  ]},
+  { id:'energy', name:'建筑节能', groups:[
+    gbGroup('energy_envelope_item','围护系统节能',['墙体节能','幕墙节能','门窗节能','屋面节能','地面节能']),gbGroup('energy_hvac','供暖空调设备及管网节能',['供暖节能','通风与空调设备节能','冷热源及管网节能']),gbGroup('energy_electrical_item','电气动力节能',['配电节能','照明节能']),gbGroup('energy_monitoring_item','监控系统节能',['监测系统节能','控制系统节能']),gbGroup('energy_renewable','可再生能源',['地源热泵换热系统','太阳能光热系统','太阳能光伏系统'])
+  ]},
+  { id:'elevator', name:'电梯', groups:[
+    gbGroup('elevator_traction','电力驱动的曳引式或强制式电梯',['设备进场验收','土建交接检验','驱动主机','导轨','门系统','轿厢','对重','安全部件','悬挂装置及随行电缆','电气装置','整机安装验收']),gbGroup('elevator_hydraulic','液压电梯',['设备进场验收','土建交接检验','液压系统','导轨','门系统','轿厢','平衡重','安全部件','电气装置','整机安装验收']),gbGroup('elevator_escalator','自动扶梯、自动人行道',['设备进场验收','土建交接检验','整机安装验收'])
+  ]}
+];
+
+</script>
+  <script>
+const DAY = 86400000;
+let library;
+let currentPlan;
+let quantityItems = [];
+let zoneSettings = [];
+let drawingFiles = [];
+let existingPlan = null;
+let customProcesses = [];
+let workflowMode = 'create';
+let auditCompleted = false;
+const ganttCollapsed = new Set();
+let ganttInitialized = false;
+let selectedWorkItems = new Set();
+let recognitionSuggestions = [];
+const storageKey = 'construction-schedule-prototype-v1';
+
+const featureLabels = {
+  foundation: '地基与基础', superstructure: '主体结构', interior_finish: '建筑装饰装修', roof: '建筑屋面',
+  plumbing: '建筑给水排水及供暖', ventilation: '通风与空调', electrical: '建筑电气', intelligent: '智能建筑', energy: '建筑节能', elevator: '电梯',
+  pile_foundation: '工程桩', retaining_structure: '基坑围护', support_system: '内支撑', dewatering: '降水', civil_defense: '人防',
+  basement: '地下室', masonry: '二次结构', facade: '外墙/幕墙', fire: '消防', municipal: '市政', landscape: '景观'
+};
+const majorFeatures = ['foundation','superstructure','interior_finish','roof','plumbing','ventilation','electrical','intelligent','energy','elevator'];
+const defaultFeatures = [...majorFeatures,'pile_foundation','retaining_structure','support_system','dewatering','basement','masonry','facade','fire','municipal','landscape'];
+const projectTemplates = {
+  school:['foundation_earthwork','foundation_support','foundation_groundwater','foundation_ground','foundation_base','foundation_waterproof','structure_concrete','structure_masonry','finish_floor','finish_plaster','finish_external_waterproof','finish_doors_windows','finish_ceiling','finish_partition','finish_tile','finish_paint','finish_detail','roof_base','roof_insulation','roof_waterproof','roof_tile','roof_detail','plumbing_indoor_supply','plumbing_indoor_drainage','plumbing_hot_water','plumbing_sanitary','plumbing_outdoor_supply','plumbing_outdoor_drainage','vent_supply','vent_exhaust','vent_smoke','vent_comfort','vent_air_water','vent_source','vent_control','electrical_outdoor','electrical_transformer','electrical_main','electrical_power','electrical_lighting','electrical_backup','electrical_lightning','intelligent_information','intelligent_bms','intelligent_fire_alarm','intelligent_security','intelligent_room','energy_envelope_item','energy_hvac','energy_electrical_item','energy_monitoring_item','energy_renewable','elevator_traction'],
+  residential:['foundation_earthwork','foundation_support','foundation_groundwater','foundation_base','foundation_waterproof','structure_concrete','structure_masonry','finish_floor','finish_plaster','finish_external_waterproof','finish_doors_windows','finish_ceiling','finish_partition','finish_tile','finish_paint','finish_detail','roof_base','roof_insulation','roof_waterproof','roof_tile','roof_detail','plumbing_indoor_supply','plumbing_indoor_drainage','plumbing_hot_water','plumbing_sanitary','plumbing_outdoor_supply','plumbing_outdoor_drainage','vent_supply','vent_exhaust','vent_smoke','electrical_main','electrical_power','electrical_lighting','electrical_backup','electrical_lightning','intelligent_information','intelligent_bms','intelligent_fire_alarm','intelligent_security','energy_envelope_item','energy_hvac','energy_electrical_item','energy_monitoring_item','elevator_traction'],
+  office:['foundation_earthwork','foundation_support','foundation_groundwater','foundation_base','foundation_waterproof','structure_concrete','structure_masonry','finish_floor','finish_plaster','finish_external_waterproof','finish_doors_windows','finish_ceiling','finish_partition','finish_panel','finish_curtain_wall','finish_paint','finish_detail','roof_base','roof_insulation','roof_waterproof','roof_detail','plumbing_indoor_supply','plumbing_indoor_drainage','plumbing_sanitary','vent_supply','vent_exhaust','vent_smoke','vent_comfort','vent_air_water','vent_source','vent_control','electrical_transformer','electrical_main','electrical_power','electrical_lighting','electrical_backup','electrical_lightning','intelligent_integration','intelligent_information','intelligent_bms','intelligent_fire_alarm','intelligent_security','intelligent_room','energy_envelope_item','energy_hvac','energy_electrical_item','energy_monitoring_item','elevator_traction'],
+  industrial:['foundation_earthwork','foundation_ground','foundation_base','foundation_waterproof','structure_concrete','structure_steel','finish_floor','finish_plaster','finish_doors_windows','finish_paint','roof_base','roof_insulation','roof_waterproof','roof_tile','plumbing_indoor_supply','plumbing_indoor_drainage','plumbing_outdoor_supply','plumbing_outdoor_drainage','vent_supply','vent_exhaust','vent_dust','vent_control','electrical_outdoor','electrical_transformer','electrical_main','electrical_power','electrical_lighting','electrical_backup','electrical_lightning','intelligent_fire_alarm','intelligent_security','energy_envelope_item','energy_hvac','energy_electrical_item','energy_monitoring_item']
+};
+
+function selectTemplateItems(type) {
+  selectedWorkItems.clear();
+  const selectedGroups = new Set(projectTemplates[type] || projectTemplates.school);
+  window.GB50300_CATALOG.flatMap(division => division.groups).forEach(group => {
+    if (selectedGroups.has(group.id)) group.items.forEach((_, index) => selectedWorkItems.add(`${group.id}::${index}`));
+  });
+}
+
+function renderDivisionTree() {
+  const root = document.getElementById('majorFeatureList');
+  root.innerHTML = window.GB50300_CATALOG.map((division, divisionIndex) => {
+    const groups = division.groups.map(group => `<section class="subdivision-node"><div class="tree-summary"><input type="checkbox" data-subdivision="${group.id}" checked><button type="button" class="tree-toggle" onclick="toggleTree('group-${group.id}',this)"><span class="chevron">›</span>${escapeHtml(group.name)}</button><small>${group.items.length} 项</small></div><div id="group-${group.id}" class="work-item-grid" hidden>${group.items.map((name, index) => `<label><input type="checkbox" data-work-item="${group.id}" value="${group.id}::${index}" checked><span>${escapeHtml(name)}</span></label>`).join('')}</div></section>`).join('');
+    return `<section class="division-node"><div class="tree-summary division-summary"><input type="checkbox" data-feature value="${division.id}" checked><button type="button" class="tree-toggle" onclick="toggleTree('division-${division.id}',this)"><span class="chevron">${divisionIndex === 0 ? '⌄' : '›'}</span><strong>${divisionIndex + 1}. ${escapeHtml(division.name)}</strong></button><small>${division.groups.length} 个子分部</small></div><div id="division-${division.id}" class="subdivision-list" ${divisionIndex === 0 ? '' : 'hidden'}>${groups}</div></section>`;
+  }).join('');
+}
+
+function renderQuickDivisions() {
+  const root = document.getElementById('majorQuickList');
+  root.innerHTML = window.GB50300_CATALOG.map((division, index) => `<label><input type="checkbox" data-quick-feature="${division.id}"><span><strong>${index + 1}. ${escapeHtml(division.name)}</strong><small data-quick-count="${division.id}"></small></span></label>`).join('');
+}
+
+window.toggleTree = (id, button) => {
+  const content = document.getElementById(id);
+  content.hidden = !content.hidden;
+  button.querySelector('.chevron').textContent = content.hidden ? '›' : '⌄';
+};
+
+function handleDivisionSelection(event) {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement)) return;
+  if (input.dataset.feature !== undefined) {
+    const division = window.GB50300_CATALOG.find(item => item.id === input.value);
+    division?.groups.forEach(group => group.items.forEach((_, index) => setWorkItem(`${group.id}::${index}`, input.checked)));
+  } else if (input.dataset.subdivision) {
+    const group = window.GB50300_CATALOG.flatMap(item => item.groups).find(item => item.id === input.dataset.subdivision);
+    group?.items.forEach((_, index) => setWorkItem(`${group.id}::${index}`, input.checked));
+  } else if (input.dataset.workItem) setWorkItem(input.value, input.checked);
+  syncDivisionCheckboxes();
+  generatePlan();
+}
+
+function handleQuickDivisionSelection(event) {
+  const input = event.target.closest('input[data-quick-feature]');
+  if (!input) return;
+  const division = window.GB50300_CATALOG.find(item => item.id === input.dataset.quickFeature);
+  division?.groups.forEach(group => group.items.forEach((_, index) => setWorkItem(`${group.id}::${index}`, input.checked)));
+  syncDivisionCheckboxes(); generatePlan();
+}
+
+function applySelectedProjectTemplate() {
+  selectTemplateItems(document.getElementById('projectType').value);
+  syncDivisionCheckboxes(); generatePlan();
+  document.getElementById('status').textContent = '已应用项目模板，可继续根据识别差异调整';
+}
+
+function setWorkItem(id, enabled) {
+  enabled ? selectedWorkItems.add(id) : selectedWorkItems.delete(id);
+  const checkbox = document.querySelector(`input[data-work-item][value="${CSS.escape(id)}"]`);
+  if (checkbox) checkbox.checked = enabled;
+}
+
+function syncDivisionCheckboxes() {
+  window.GB50300_CATALOG.forEach(division => {
+    let selected = 0; let total = 0;
+    division.groups.forEach(group => {
+      const ids = group.items.map((_, index) => `${group.id}::${index}`);
+      const count = ids.filter(id => selectedWorkItems.has(id)).length;
+      ids.forEach(id => {
+        const itemCheckbox = document.querySelector(`input[data-work-item][value="${CSS.escape(id)}"]`);
+        if (itemCheckbox) itemCheckbox.checked = selectedWorkItems.has(id);
+      });
+      const checkbox = document.querySelector(`input[data-subdivision="${group.id}"]`);
+      checkbox.checked = count === ids.length; checkbox.indeterminate = count > 0 && count < ids.length;
+      selected += count; total += ids.length;
+    });
+    const checkbox = document.querySelector(`input[data-feature][value="${division.id}"]`);
+    checkbox.checked = selected > 0; checkbox.indeterminate = selected > 0 && selected < total;
+    const quick = document.querySelector(`input[data-quick-feature="${division.id}"]`);
+    if (quick) { quick.checked = selected > 0; quick.indeterminate = selected > 0 && selected < total; }
+    const count = document.querySelector(`[data-quick-count="${division.id}"]`);
+    if (count) count.textContent = `已选 ${selected}/${total} 项`;
+  });
+  const advancedCount = document.getElementById('advancedSelectionCount');
+  if (advancedCount) advancedCount.textContent = `已选 ${selectedWorkItems.size} 项`;
+}
+
+async function initialize() {
+  library = window.PROCESS_LIBRARY;
+  selectTemplateItems('school');
+  renderDivisionTree();
+  renderQuickDivisions();
+  Object.entries(featureLabels).filter(([key]) => !majorFeatures.includes(key)).forEach(([key, label]) => {
+    document.getElementById('specialFeatureList').insertAdjacentHTML('beforeend', `<label><input type="checkbox" value="${key}" ${defaultFeatures.includes(key) ? 'checked' : ''}><span>${label}</span></label>`);
+  });
+  document.getElementById('generate').addEventListener('click', generatePlan);
+  document.getElementById('startGeneration').addEventListener('click', startPlanGeneration);
+  document.getElementById('quantityFile').addEventListener('change', importQuantities);
+  document.getElementById('networkScope').addEventListener('change', () => currentPlan && renderNetwork(currentPlan.tasks));
+  document.getElementById('drawingFiles').addEventListener('change', registerDrawings);
+  document.getElementById('existingPlanFile').addEventListener('change', registerExistingPlan);
+  document.getElementById('reviewPanel').addEventListener('click', event => { if (event.target.closest('#startAudit')) startExistingPlanAudit(); });
+  document.getElementById('saveProject').addEventListener('click', saveProject);
+  document.getElementById('exportCsv').addEventListener('click', exportPlanCsv);
+  document.getElementById('exportJson').addEventListener('click', exportPlanJson);
+  document.getElementById('exportMpp').addEventListener('click', exportPlanMpp);
+  document.getElementById('printPlan').addEventListener('click', () => window.print());
+  document.getElementById('addProcessButton').addEventListener('click', openProcessDialog);
+  document.getElementById('cancelProcess').addEventListener('click', closeProcessDialog);
+  document.getElementById('cancelProcessBottom').addEventListener('click', closeProcessDialog);
+  document.getElementById('processForm').addEventListener('submit', addCustomProcess);
+  document.getElementById('startDate').addEventListener('change', syncFinishFromDays);
+  document.getElementById('totalCalendarDays').addEventListener('change', syncFinishFromDays);
+  document.getElementById('finishDate').addEventListener('change', syncDaysFromFinish);
+  document.getElementById('majorFeatureList').addEventListener('change', handleDivisionSelection);
+  document.getElementById('majorFeatureList').addEventListener('click', event => { if (event.target.matches('input[type="checkbox"]')) event.stopPropagation(); });
+  document.querySelectorAll('#specialFeatureList input').forEach(input => input.addEventListener('change', generatePlan));
+  document.getElementById('majorQuickList').addEventListener('change', handleQuickDivisionSelection);
+  document.getElementById('applyProjectTemplate').addEventListener('click', applySelectedProjectTemplate);
+  syncDivisionCheckboxes();
+  loadProject();
+  document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
+  document.querySelectorAll('.module-tab').forEach(button => button.addEventListener('click', () => switchModule(button.dataset.module)));
+  document.querySelectorAll('.workflow-button').forEach(button => button.addEventListener('click', () => switchWorkflow(button.dataset.workflow)));
+  document.getElementById('status').textContent = `工序库已载入：${library.packages.length} 个工序包`;
+  generatePlan();
+  switchWorkflow('create');
+}
+
+function captureProject() {
+  return {
+    fields: Object.fromEntries([...document.querySelectorAll('.config-panel input, .config-panel select')].filter(input => input.id && input.type !== 'file').map(input => [input.id, input.type === 'checkbox' ? input.checked : input.value])),
+    features: [...selectedDivisions(), ...document.querySelectorAll('#specialFeatureList input:checked')].map(input => typeof input === 'string' ? input : input.value), selectedWorkItems:[...selectedWorkItems], quantityItems, zoneSettings, drawingFiles, existingPlan, customProcesses
+  };
+}
+
+function selectedDivisions() {
+  return window.GB50300_CATALOG.filter(division => division.groups.some(group => group.items.some((_, index) => selectedWorkItems.has(`${group.id}::${index}`)))).map(division => division.id);
+}
+
+function saveProject() {
+  localStorage.setItem(storageKey, JSON.stringify(captureProject()));
+  document.getElementById('status').textContent = '项目已保存到本机浏览器存储';
+}
+
+function loadProject() {
+  const saved = localStorage.getItem(storageKey);
+  if (!saved) return;
+  try {
+    const project = JSON.parse(saved);
+    Object.entries(project.fields || {}).forEach(([id, value]) => { const input = document.getElementById(id); if (input) input.type === 'checkbox' ? input.checked = value : input.value = value; });
+    selectedWorkItems = new Set(project.selectedWorkItems || [...selectedWorkItems]);
+    document.querySelectorAll('input[data-feature], #specialFeatureList input').forEach(input => { input.checked = (project.features || []).includes(input.value); });
+    document.querySelectorAll('input[data-work-item]').forEach(input => { input.checked = selectedWorkItems.has(input.value); });
+    syncDivisionCheckboxes();
+    quantityItems = project.quantityItems || [];
+    zoneSettings = project.zoneSettings || [];
+    drawingFiles = project.drawingFiles || [];
+    existingPlan = project.existingPlan || null;
+    customProcesses = project.customProcesses || [];
+    customProcesses.forEach(installCustomProcess);
+    if (quantityItems.length) document.getElementById('quantityInfo').textContent = `已恢复 ${quantityItems.length} 项本地清单工程量。`;
+  } catch { localStorage.removeItem(storageKey); }
+}
+
+function getConfig() {
+  return {
+    name: document.getElementById('projectName').value || '未命名项目',
+    start: new Date(`${document.getElementById('startDate').value}T00:00:00`),
+    finish: new Date(`${document.getElementById('finishDate').value}T00:00:00`), totalCalendarDays:Number(document.getElementById('totalCalendarDays').value),
+    buildings: Number(document.getElementById('buildingCount').value),
+    floors: Number(document.getElementById('floorCount').value),
+    zones: Number(document.getElementById('zoneCount').value), supportWaitDays: Number(document.getElementById('supportWaitDays').value),
+    features: [...selectedDivisions(), ...[...document.querySelectorAll('#specialFeatureList input:checked')].map(input => input.value)], workItems:new Set(selectedWorkItems),
+    resources: {
+      rebar: Number(document.getElementById('rebarTeams').value), formwork: Number(document.getElementById('formworkTeams').value),
+      masonry: Number(document.getElementById('masonryTeams').value), plaster: Number(document.getElementById('plasterTeams').value), mep: Number(document.getElementById('mepTeams').value),
+      template: Number(document.getElementById('templateSets').value), rebarRate: Number(document.getElementById('rebarRate').value),
+      masonryRate: Number(document.getElementById('masonryRate').value), plasterRate: Number(document.getElementById('plasterRate').value)
+    }
+  };
+}
+
+function shouldEnable(pack, features) {
+  const requirements = {
+    pile_and_excavation:['foundation'], basement_structure:['foundation','basement'], superstructure_cycle:['superstructure'], secondary_structure:['superstructure','masonry'],
+    roof:['roof'], facade:['facade','energy'], interior_finish:['interior_finish'], mep:['plumbing','electrical','fire','ventilation'],
+    intelligent_building:['intelligent'], building_energy:['energy'], elevator:['elevator'], external_works:['municipal','landscape']
+  };
+  const needed = requirements[pack.id];
+  if (needed) return needed.every(feature => features.includes(feature));
+  return pack.features.length === 0 || pack.features.some(feature => features.includes(feature));
+}
+
+function scopesFor(pack, config) {
+  if (pack.scope === 'project') return [{ id: 'P', label: '项目' }];
+  if (pack.scope === 'zone') {
+    const count = pack.id === 'external_works' ? 1 : Math.max(config.zones, 1);
+    if (pack.id !== 'external_works') ensureZoneSettings(count);
+    return Array.from({ length: count }, (_, index) => ({ id: `Z${index + 1}`, label: pack.id === 'external_works' ? '室外工程区' : zoneSettings[index].name, order: zoneSettings[index].order }));
+  }
+  if (pack.scope === 'building') return Array.from({ length: config.buildings }, (_, index) => ({ id: `B${index + 1}`, label: `${index + 1}#楼` }));
+  const output = [];
+  for (let building = 1; building <= config.buildings; building += 1) {
+    for (let floor = 1; floor <= config.floors; floor += 1) output.push({ id: `B${building}F${floor}`, label: `${building}#楼 ${floor}层`, building, floor });
+  }
+  return output;
+}
+
+function generatePlan() {
+  const config = getConfig();
+  currentPlan = buildPlan(config);
+  render();
+}
+
+function startPlanGeneration() {
+  generatePlan();
+  switchModule('generate');
+  showView('gantt');
+  document.getElementById('status').textContent = `${currentPlan.config.name} · 计划已生成，共 ${currentPlan.tasks.length} 项任务`;
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function buildPlan(config) {
+  const tasks = [];
+  const links = [];
+  const byKey = new Map();
+  const packages = library.packages.filter(pack => shouldEnable(pack, config.features));
+  packages.forEach(pack => {
+    scopesFor(pack, config).forEach(scope => {
+      const local = new Map();
+      pack.tasks.filter(([templateId]) => isTaskApplicable(pack.id, templateId, config.features) && isWorkItemEnabled(pack.id, templateId, config.workItems) && isScopedTaskApplicable(pack.id, templateId, scope, config)).forEach(([templateId, name, mode, days, resources]) => {
+        const duration = mode === 'productivity' ? 2 : mode === 'condition' ? conditionDuration(templateId, config) : days;
+        const task = { id: `${pack.id}:${scope.id}:${templateId}`, templateId, name, pack: pack.name, scope: scope.label, mode, duration, resources, quantity: 0, unit: '', quantitySource: '', predecessors: [], successors: [], start: null, finish: null, critical: false };
+        tasks.push(task); local.set(templateId, task); byKey.set(task.id, task);
+      });
+      (pack.chains || []).forEach(chain => chain.slice(1).forEach((successor, index) => connect(local.get(chain[index]), local.get(successor), 'FS', '工序库')));
+      (pack.conditionalLinks || []).forEach(link => connect(local.get(link.from), local.get(link.to), 'FS', `技术条件：${link.condition}`));
+    });
+  });
+  mapQuantities(tasks, config);
+  linkZoneFlow(tasks, config);
+  linkFloorCycles(tasks, config);
+  linkPhaseHandoffs(tasks, config);
+  linkCustomProcesses(tasks);
+  linkAcceptanceMilestones(tasks, config);
+  schedule(tasks, config.start);
+  const resourceLinks = levelResources(tasks, config);
+  schedule(tasks, config.start);
+  return { config, tasks, links, resourceLinks };
+}
+
+function isTaskApplicable(packageId, templateId, features) {
+  if (packageId === 'pile_and_excavation') {
+    if (templateId.startsWith('retaining_') && !features.includes('retaining_structure')) return false;
+    if (templateId.startsWith('engineering_pile') && !features.includes('pile_foundation')) return false;
+    if (templateId === 'soil_improvement' && !features.includes('support_system')) return false;
+    if (templateId.startsWith('dewatering_') && !features.includes('dewatering')) return false;
+    if ((templateId.startsWith('support_') || templateId === 'excavation_l2') && !features.includes('support_system')) return false;
+  }
+  if (packageId === 'mep') {
+    if (templateId.startsWith('plumbing_') && !features.includes('plumbing')) return false;
+    if (templateId.startsWith('electrical_') && !features.includes('electrical')) return false;
+    if (templateId.startsWith('fire_') && !features.includes('fire')) return false;
+    if (templateId.startsWith('vent_') && !features.includes('ventilation')) return false;
+  }
+  if (packageId === 'facade' && templateId === 'curtain_wall' && !features.includes('facade')) return false;
+  if (packageId === 'facade' && templateId === 'insulation' && !features.includes('energy')) return false;
+  if (packageId !== 'acceptance') return true;
+  const requirements = {
+    energy_acceptance: ['facade','roof'], fire_acceptance: ['fire'], civil_defense_acceptance: ['civil_defense'],
+    planning_acceptance: ['municipal','landscape'], sponge_acceptance: ['municipal','landscape']
+  };
+  return !requirements[templateId] || requirements[templateId].some(feature => features.includes(feature));
+}
+
+function isWorkItemEnabled(packageId, templateId, workItems) {
+  const any = prefix => [...workItems].some(id => id.startsWith(`${prefix}::`));
+  if (['preparation','acceptance','external_works'].includes(packageId) || packageId.startsWith('custom_')) return true;
+  if (packageId === 'pile_and_excavation') {
+    if (templateId.startsWith('retaining_') || templateId.startsWith('support_') || templateId === 'excavation_l2') return any('foundation_support');
+    if (templateId.startsWith('dewatering_')) return any('foundation_groundwater');
+    if (templateId === 'soil_improvement') return any('foundation_ground');
+    if (templateId.startsWith('engineering_pile')) return any('foundation_base');
+    return any('foundation_earthwork');
+  }
+  if (packageId === 'basement_structure') return /waterproof|protection/.test(templateId) ? any('foundation_waterproof') : any('foundation_base');
+  if (packageId === 'superstructure_cycle') return any('structure_concrete');
+  if (packageId === 'secondary_structure') return any('structure_masonry');
+  if (packageId === 'roof') {
+    if (/waterproof|ponding/.test(templateId)) return any('roof_waterproof');
+    if (/insulation/.test(templateId)) return any('roof_insulation');
+    if (/finish/.test(templateId)) return any('roof_tile');
+    return any('roof_base') || any('roof_detail');
+  }
+  if (packageId === 'facade') {
+    if (templateId === 'curtain_wall') return any('finish_curtain_wall');
+    if (templateId === 'window_frame') return any('finish_doors_windows');
+    if (templateId === 'insulation') return any('energy_envelope_item');
+    if (templateId.includes('plaster')) return any('finish_plaster');
+    return any('finish_external_waterproof') || any('finish_paint');
+  }
+  if (packageId === 'interior_finish') {
+    if (templateId.startsWith('ceiling_')) return any('finish_ceiling');
+    if (templateId.startsWith('toilet_')) return any('finish_floor') || any('finish_tile') || any('finish_external_waterproof');
+    if (/paint|putty/.test(templateId)) return any('finish_paint');
+    if (/plaster|substrate/.test(templateId)) return any('finish_plaster');
+    return any('finish_detail') || any('finish_floor');
+  }
+  if (packageId === 'mep') {
+    if (templateId.startsWith('plumbing_')) return [...workItems].some(id => id.startsWith('plumbing_'));
+    if (templateId.startsWith('electrical_')) return [...workItems].some(id => id.startsWith('electrical_'));
+    if (templateId.startsWith('vent_')) return [...workItems].some(id => id.startsWith('vent_'));
+    return true;
+  }
+  if (packageId === 'intelligent_building') return [...workItems].some(id => id.startsWith('intelligent_'));
+  if (packageId === 'building_energy') {
+    if (templateId === 'energy_envelope') return any('energy_envelope_item');
+    if (templateId === 'energy_system_test') return any('energy_hvac') || any('energy_electrical_item') || any('energy_monitoring_item');
+    return [...workItems].some(id => id.startsWith('energy_'));
+  }
+  if (packageId === 'elevator') return [...workItems].some(id => id.startsWith('elevator_'));
+  return true;
+}
+
+function syncFinishFromDays() {
+  const start = new Date(`${document.getElementById('startDate').value}T00:00:00`);
+  const days = Math.max(1, Number(document.getElementById('totalCalendarDays').value) || 1);
+  if (Number.isNaN(start.getTime())) return;
+  document.getElementById('finishDate').value = new Date(start.getTime() + (days - 1) * DAY).toISOString().slice(0, 10);
+  generatePlan();
+}
+
+function syncDaysFromFinish() {
+  const start = new Date(`${document.getElementById('startDate').value}T00:00:00`);
+  const finish = new Date(`${document.getElementById('finishDate').value}T00:00:00`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(finish.getTime()) || finish < start) return;
+  document.getElementById('totalCalendarDays').value = Math.round((finish - start) / DAY) + 1;
+  generatePlan();
+}
+
+function isScopedTaskApplicable(packageId, templateId, scope, config) {
+  if (packageId === 'superstructure_cycle' && templateId === 'hoist_install') return scope.floor === Math.min(5, config.floors);
+  return true;
+}
+
+function ensureZoneSettings(count) {
+  zoneSettings = Array.from({ length: count }, (_, index) => {
+    const existing = zoneSettings[index];
+    return existing || { name: `地下施工区 ${index + 1}`, postPourCount: 1, order: index + 1 };
+  });
+}
+
+function conditionDuration(templateId, config) {
+  if (templateId.startsWith('support_l')) return config.supportWaitDays;
+  if (templateId === 'curing_stripping') return 3;
+  return 0;
+}
+
+function importQuantities(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.name.toLowerCase().endsWith('.xlsx')) {
+    importXlsx(file);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      quantityItems = parseQuantityCsv(reader.result);
+      auditCompleted = false;
+      document.getElementById('quantityInfo').textContent = `已导入 ${quantityItems.length} 项清单工程量，将按工序关键词自动建议分配。`;
+      generatePlan();
+    } catch (error) {
+      document.getElementById('quantityInfo').textContent = `清单导入失败：${error.message}`;
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+async function importXlsx(file) {
+  try {
+    const response = await fetch('/api/read-xlsx', { method: 'POST', headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }, body: await file.arrayBuffer() });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || '未知错误');
+    quantityItems = normalizeQuantityRows(payload.values);
+    auditCompleted = false;
+    document.getElementById('quantityInfo').textContent = `已导入 Excel 首个工作表的 ${quantityItems.length} 项清单工程量。`;
+    generatePlan();
+  } catch (error) {
+    document.getElementById('quantityInfo').textContent = `清单导入失败：${error.message}`;
+  }
+}
+
+function parseQuantityCsv(text) {
+  const rows = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter(Boolean).map(parseCsvLine);
+  if (rows.length < 2) throw new Error('文件至少应包含表头和一条清单记录');
+  const headers = rows.shift().map(value => value.trim());
+  const position = names => headers.findIndex(header => names.includes(header));
+  const nameIndex = position(['项目名称','清单名称','名称']);
+  const featureIndex = position(['项目特征描述','项目特征','特征描述']);
+  const unitIndex = position(['计量单位','单位']);
+  const quantityIndex = position(['工程量','数量']);
+  if ([nameIndex, unitIndex, quantityIndex].some(index => index < 0)) throw new Error('缺少“项目名称、计量单位、工程量”表头');
+  return rows.map((row, index) => ({
+    id:index + 1, name:String(row[nameIndex] ?? ''), feature:featureIndex < 0 ? '' : String(row[featureIndex] ?? ''),
+    unit:String(row[unitIndex] ?? ''), quantity:Number(String(row[quantityIndex] ?? '').replace(/,/g, '')) || 0, mapping:'auto'
+  })).filter(item => item.name && item.quantity > 0);
+}
+
+function parseCsvLine(line) {
+  const values = []; let value = ''; let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === '"' && line[index + 1] === '"') { value += '"'; index += 1; }
+    else if (char === '"') quoted = !quoted;
+    else if (char === ',' && !quoted) { values.push(value); value = ''; }
+    else value += char;
+  }
+  values.push(value); return values;
+}
+
+function normalizeQuantityRows(rows, positions) {
+  if (!rows || rows.length < 2) throw new Error('文件至少应包含表头和一条清单记录');
+  const headers = rows[0].map(value => String(value ?? '').trim());
+  const position = names => headers.findIndex(header => names.includes(header));
+  const indexes = positions || {
+    nameIndex: position(['项目名称','清单名称','名称']), featureIndex: position(['项目特征描述','项目特征','特征描述']),
+    unitIndex: position(['计量单位','单位']), quantityIndex: position(['工程量','数量'])
+  };
+  if ([indexes.nameIndex, indexes.unitIndex, indexes.quantityIndex].some(index => index < 0)) throw new Error('缺少“项目名称、计量单位、工程量”表头');
+  return rows.slice(1).map((row, index) => ({
+    id: index + 1, name: String(row[indexes.nameIndex] ?? ''), feature: indexes.featureIndex < 0 ? '' : String(row[indexes.featureIndex] ?? ''),
+    unit: String(row[indexes.unitIndex] ?? ''), quantity: Number(String(row[indexes.quantityIndex] ?? '').replace(/,/g, '')) || 0, mapping: 'auto'
+  })).filter(item => item.quantity > 0);
+}
+
+function mapQuantities(tasks, config) {
+  quantityItems.forEach(item => {
+    const candidates = tasks.filter(task => matchesQuantity(task, item));
+    if (!candidates.length) return;
+    const allocated = item.quantity / candidates.length;
+    candidates.forEach(task => {
+      task.quantity += allocated;
+      task.unit = item.unit;
+      task.quantitySource = item.name;
+    });
+  });
+  tasks.filter(task => task.mode === 'productivity' && task.quantity > 0).forEach(task => {
+    const capacity = capacityFor(task, config.resources);
+    if (capacity > 0) task.duration = Math.max(1, Math.ceil(task.quantity / capacity));
+  });
+}
+
+function matchesQuantity(task, item) {
+  const manual = {
+    rebar: ['slab_rebar','wall_column_rebar','top_rebar','column_rebar','bottom_rebar','tie_rebar'],
+    masonry: ['wall_masonry'], plaster: ['wall_plaster','facade_plaster','toilet_plaster'],
+    waterproof: ['base_waterproof','roof_waterproof','toilet_waterproof'], concrete: ['slab_concrete','top_concrete','column_concrete','wall_column_concrete']
+  };
+  if (item.mapping && item.mapping !== 'auto') return manual[item.mapping]?.includes(task.templateId) || false;
+  const text = `${item.name} ${item.feature}`.replace(/\s/g, '');
+  const specific = [
+    [['底板','钢筋'], ['slab_rebar']], [['墙柱','钢筋'], ['wall_column_rebar','column_rebar']],
+    [['顶板','钢筋'], ['top_rebar','bottom_rebar']], [['砌筑'], ['wall_masonry']], [['砌体'], ['wall_masonry']],
+    [['抹灰'], ['wall_plaster','facade_plaster','toilet_plaster']], [['防水'], ['base_waterproof','roof_waterproof','toilet_waterproof']],
+    [['混凝土'], ['slab_concrete','top_concrete','column_concrete','wall_column_concrete']]
+  ];
+  const found = specific.find(([terms]) => terms.every(term => text.includes(term)));
+  if (found) return found[1].includes(task.templateId);
+  if (text.includes('钢筋')) return task.templateId.includes('rebar');
+  return text.includes(task.name.replace(/施工|绑扎|安装|工程/g, ''));
+}
+
+function capacityFor(task, resources) {
+  if (task.templateId.includes('rebar')) return resources.rebar * resources.rebarRate;
+  if (task.templateId.includes('masonry')) return resources.masonry * resources.masonryRate;
+  if (task.templateId.includes('plaster')) return resources.plaster * resources.plasterRate;
+  return 0;
+}
+
+function connect(from, to, relation, source, lag = 0) {
+  if (!from || !to || from.successors.some(link => link.to === to)) return;
+  const link = { from, to, relation, source, lag:Number(lag) || 0 };
+  from.successors.push(link); to.predecessors.push(link);
+}
+
+function linkPhaseHandoffs(tasks, config) {
+  const all = templateId => tasks.filter(task => task.templateId === templateId);
+  const sameScope = (fromId, toIds, source) => all(fromId).forEach(from => toIds.forEach(toId => all(toId).filter(to => to.scope === from.scope).forEach(to => connect(from, to, 'FS', source))));
+  const preparationEnds = all('survey_network').concat(all('site_roads'));
+  const foundationStarts = all('retaining_pile').concat(all('engineering_pile'), all('soil_improvement'), all('dewatering_well'));
+  preparationEnds.forEach(from => foundationStarts.forEach(to => connect(from, to, 'FS', '施工准备完成后启动基础工程')));
+  all('survey_network').forEach(from => all('tower_crane_base').forEach(to => connect(from, to, 'FS', '测量控制完成后施工塔吊基础')));
+  all('tower_crane_install').forEach(from => all('slab_rebar').concat(all('floor_shoring')).forEach(to => connect(from, to, 'FS', '垂直运输设备验收后服务结构施工')));
+
+  const basementEnds = all('top_concrete').filter(task => task.pack === '基础与地下结构');
+  const firstFloorStarts = tasks.filter(task => task.id.includes('superstructure_cycle:') && task.templateId === 'setting_out' && task.scope.endsWith('1层'));
+  const structuralStarts = firstFloorStarts.length ? firstFloorStarts : all('pile_head_treatment');
+  const foundationEnds = all('foundation_inspection');
+  (basementEnds.length ? basementEnds : foundationEnds.length ? foundationEnds : preparationEnds).forEach(from => structuralStarts.forEach(to => connect(from, to, 'FS', '基础或地下结构与地上主体交接')));
+
+  sameScope('curing_stripping', ['masonry_setting_out'], '主体结构与二次结构楼层移交');
+  sameScope('tie_concrete', ['wall_substrate','toilet_substrate','ceiling_mep'], '二次结构完成后移交装饰工作面');
+  sameScope('beam_slab_form', ['plumbing_embed','electrical_embed','fire_embed','vent_embed'], '结构施工与机电预留预埋配合');
+  sameScope('slab_concrete', ['plumbing_install','electrical_containment','fire_install','vent_install'], '结构完成后启动机电安装');
+
+  for (let building = 1; building <= config.buildings; building += 1) {
+    const top = tasks.find(task => task.id === `superstructure_cycle:B${building}F${config.floors}:curing_stripping`);
+    ['roof_substrate','facade_substrate','elevator_handover','energy_sample'].forEach(templateId => {
+      const target = tasks.find(task => task.templateId === templateId && task.scope === `${building}#楼`);
+      connect(top, target, 'FS', '主体封顶后移交屋面及外立面');
+    });
+    const intelligentStart = tasks.find(task => task.templateId === 'intelligent_conduit' && task.scope === `${building}#楼`);
+    tasks.filter(task => task.templateId === 'secondary_embed' && task.scope.startsWith(`${building}#楼 `)).forEach(from => connect(from, intelligentStart, 'FS', '二次结构配管后启动智能化系统'));
+  }
+
+  all('hoist_install').forEach(hoist => {
+    const structural = tasks.find(task => task.scope === hoist.scope && task.templateId === 'slab_concrete');
+    connect(structural, hoist, 'FS', '结构达到施工电梯安装楼层');
+  });
+
+  const externalStarts = all('utility_trench').concat(all('road_subgrade'), all('landscape_ground'));
+  all('outer_wall_backfill').concat(all('facade_water_test')).forEach(from => externalStarts.forEach(to => connect(from, to, 'FS', '地下回填及外立面完成后移交室外工程')));
+  all('utility_backfill').forEach(from => all('road_subgrade').concat(all('landscape_ground'), all('outdoor_lighting'), all('sponge_facility')).forEach(to => connect(from, to, 'FS', '室外管网完成后移交道路、景观及海绵工程')));
+  all('plumbing_test').concat(all('electrical_test'), all('vent_test')).forEach(from => all('energy_system_test').forEach(to => connect(from, to, 'FS', '建筑设备系统完成后进行节能检测')));
+}
+
+function linkCustomProcesses(tasks) {
+  customProcesses.forEach(process => {
+    if (!process.predecessorTemplateId) return;
+    const targets = tasks.filter(task => task.templateId === `${process.id}_task`);
+    const predecessors = tasks.filter(task => task.pack === process.predecessorPackage && task.templateId === process.predecessorTemplateId);
+    targets.forEach(target => {
+      let matches = predecessors.filter(candidate => candidate.scope === target.scope);
+      if (!matches.length && target.scope === '项目') matches = predecessors;
+      if (!matches.length) matches = predecessors.filter(candidate => candidate.scope === '项目');
+      if (!matches.length && target.scope.endsWith('#楼')) matches = predecessors.filter(candidate => candidate.scope.startsWith(`${target.scope} `));
+      if (!matches.length && /#楼 \d+层$/.test(target.scope)) matches = predecessors.filter(candidate => target.scope.startsWith(candidate.scope));
+      (matches.length ? matches : predecessors).forEach(from => connect(from, target, process.relation || 'FS', '手工工序逻辑', process.lag));
+      const successors = tasks.filter(task => task.pack === process.successorPackage && task.templateId === process.successorTemplateId);
+      let nextMatches = successors.filter(candidate => candidate.scope === target.scope);
+      if (!nextMatches.length && target.scope === '项目') nextMatches = successors;
+      if (!nextMatches.length) nextMatches = successors.filter(candidate => candidate.scope === '项目');
+      if (!nextMatches.length && target.scope.endsWith('#楼')) nextMatches = successors.filter(candidate => candidate.scope.startsWith(`${target.scope} `));
+      if (!nextMatches.length && /#楼 \d+层$/.test(target.scope)) nextMatches = successors.filter(candidate => target.scope.startsWith(candidate.scope));
+      (nextMatches.length ? nextMatches : successors).forEach(to => connect(target, to, 'FS', '手工工序后续逻辑'));
+    });
+  });
+}
+
+function linkFloorCycles(tasks, config) {
+  for (let building = 1; building <= config.buildings; building += 1) {
+    for (let floor = 2; floor <= config.floors; floor += 1) {
+      const previous = tasks.find(task => task.id === `superstructure_cycle:B${building}F${floor - 1}:curing_stripping`);
+      const next = tasks.find(task => task.id === `superstructure_cycle:B${building}F${floor}:setting_out`);
+      connect(previous, next, 'FS', '楼层流水');
+    }
+  }
+}
+
+function linkZoneFlow(tasks, config) {
+  ensureZoneSettings(Math.max(config.zones, 1));
+  const zones = [...zoneSettings].sort((a, b) => a.order - b.order);
+  zones.forEach((zone, index) => {
+    const zoneId = `Z${zoneSettings.indexOf(zone) + 1}`;
+    const excavationEnd = tasks.find(task => task.id === `pile_and_excavation:${zoneId}:foundation_inspection`);
+    const basementStart = tasks.find(task => task.id === `basement_structure:${zoneId}:pile_head_treatment`);
+    connect(excavationEnd, basementStart, 'FS', '基础开挖与地下结构衔接');
+    if (index > 0) {
+      const previousZone = zones[index - 1];
+      const previousId = `Z${zoneSettings.indexOf(previousZone) + 1}`;
+      const previousSupport = tasks.find(task => task.id === `pile_and_excavation:${previousId}:support_l1`);
+      const nextExcavation = tasks.find(task => task.id === `pile_and_excavation:${zoneId}:surface_excavation`);
+      connect(previousSupport, nextExcavation, 'FS', '分区土方与支撑流水');
+    }
+  });
+}
+
+function linkAcceptanceMilestones(tasks, config) {
+  const acceptance = templateId => tasks.find(task => task.id === `acceptance:P:${templateId}`);
+  const linkAll = (fromTemplates, toTemplate, source) => {
+    const target = acceptance(toTemplate);
+    tasks.filter(task => fromTemplates.includes(task.templateId)).forEach(task => connect(task, target, 'FS', source));
+  };
+  linkAll(['tie_concrete', 'curing_stripping'], 'structure_acceptance', '结构验收前置条件');
+  tasks.filter(task => task.pack === '二次结构与结构验收' && task.templateId === 'structural_acceptance').forEach(from => connect(from, acceptance('structure_acceptance'), 'FS', '分层结构验收汇总'));
+  linkAll(['facade_water_test', 'roof_finish', 'insulation'], 'energy_acceptance', '节能专项验收前置条件');
+  linkAll(['fire_commissioning'], 'fire_acceptance', '消防专项验收前置条件');
+  linkAll(['top_concrete'], 'civil_defense_acceptance', '人防专项验收前置条件');
+  linkAll(['road_finish', 'planting', 'outdoor_lighting'], 'planning_acceptance', '规划专项验收前置条件');
+  linkAll(['sponge_facility'], 'sponge_acceptance', '海绵专项验收前置条件');
+  linkAll(['paint_finish','toilet_finish','ceiling_finish','public_finish','plumbing_test','electrical_test','vent_test','roof_finish','facade_water_test','intelligent_acceptance','energy_division_acceptance','elevator_acceptance','road_finish','planting','outdoor_lighting'], 'joint_acceptance', '竣工联合验收前置条件');
+}
+
+function schedule(tasks, startDate) {
+  const inDegree = new Map(tasks.map(task => [task, task.predecessors.length]));
+  const queue = tasks.filter(task => inDegree.get(task) === 0);
+  const sorted = [];
+  while (queue.length) {
+    const task = queue.shift(); sorted.push(task);
+    task.successors.forEach(link => { inDegree.set(link.to, inDegree.get(link.to) - 1); if (inDegree.get(link.to) === 0) queue.push(link.to); });
+  }
+  if (sorted.length !== tasks.length) throw new Error('任务网络存在循环关系');
+  sorted.forEach((task, rank) => {
+    task.rank = rank;
+    const constraint = link => {
+      const lag = (link.lag || 0) * DAY;
+      if (link.relation === 'SS') return link.from.start + lag;
+      if (link.relation === 'FF') return link.from.finish + lag - task.duration * DAY;
+      return link.from.finish + lag;
+    };
+    const earliest = task.predecessors.length ? Math.max(startDate.getTime(), ...task.predecessors.map(constraint)) : startDate.getTime();
+    task.start = earliest; task.finish = earliest + task.duration * DAY;
+  });
+  const projectFinish = Math.max(...tasks.map(task => task.finish));
+  [...sorted].reverse().forEach(task => {
+    const limit = link => {
+      const lag = (link.lag || 0) * DAY;
+      if (link.relation === 'SS') return link.to.latestStart - lag + task.duration * DAY;
+      if (link.relation === 'FF') return link.to.latestFinish - lag;
+      return link.to.latestStart - lag;
+    };
+    const latestFinish = task.successors.length ? Math.min(...task.successors.map(limit)) : projectFinish;
+    task.latestFinish = latestFinish; task.latestStart = latestFinish - task.duration * DAY;
+    task.critical = task.latestStart === task.start;
+  });
+}
+
+function resourceCapacity(resource, config) {
+  const capacities = {
+    rebar_team: config.resources.rebar, formwork_team: config.resources.formwork, masonry_team: config.resources.masonry,
+    plaster_team: config.resources.plaster, mep_team: config.resources.mep, template_set: config.resources.template,
+    shoring_set: config.resources.template, concrete_team: 1, concrete_pump: 1, earthwork_team: 1,
+    support_team: 1, pile_team: 1, waterproof_team: 1, facade_team: 1, roofing_team: 1,
+    painting_team: 1, landscape_team: 1, tower_crane: 1, construction_hoist: 1, survey_team: 1, temporary_works_team: 1
+  };
+  return capacities[resource] || 1;
+}
+
+function levelResources(tasks, config) {
+  const resourceLinks = [];
+  [...new Set(tasks.flatMap(task => task.resources))].forEach(resource => {
+    const capacity = resourceCapacity(resource, config);
+    const candidates = tasks.filter(task => task.resources.includes(resource) && task.duration > 0).sort((a, b) => a.start - b.start || a.rank - b.rank);
+    const lanes = Array.from({ length: capacity }, () => ({ finish: -Infinity, task: null }));
+    candidates.forEach(task => {
+      const available = lanes.filter(lane => lane.finish <= task.start);
+      const lane = (available.length ? available : lanes).sort((a, b) => a.finish - b.finish)[0];
+      if (lane.task) {
+        const before = task.predecessors.length;
+        connect(lane.task, task, 'FS', `资源流水：${resource}`);
+        if (task.predecessors.length > before) resourceLinks.push({ resource, from: lane.task, to: task });
+      }
+      lane.finish = Math.max(lane.finish, task.finish);
+      lane.task = task;
+    });
+  });
+  return resourceLinks;
+}
+
+function render() {
+  const { config, tasks } = currentPlan;
+  const finish = Math.max(...tasks.map(task => task.finish));
+  const critical = tasks.filter(task => task.critical).length;
+  const issues = inspect(tasks, config);
+  const mapped = tasks.filter(task => task.quantity > 0).length;
+  const variance = Math.ceil((finish - config.finish.getTime()) / DAY);
+  document.getElementById('summary').innerHTML = [
+    ['计划任务', `${tasks.length} 项`], ['合同竣工', formatDate(config.finish)], ['预计竣工', formatDate(finish)], ['工期状态', variance > 0 ? `超期 ${variance} 天` : `余量 ${Math.abs(variance)} 天`], ['关键任务', `${critical} 项`]
+  ].map(([label,value]) => `<div class="metric"><small>${label}</small><strong>${value}</strong></div>`).join('');
+  renderGantt(tasks, config.start); renderNetwork(tasks); renderIssues(issues);
+  renderMapping(tasks);
+  renderZones(config);
+  renderResources(tasks, config);
+  renderScenarios(config, finish);
+  renderDrawings();
+  renderConfigureSummary(config);
+  renderRecognition();
+  renderReview();
+  renderProcessLibrary();
+  document.getElementById('status').textContent = `${config.name} · 已生成 ${tasks.length} 项任务`;
+}
+
+function switchModule(name) {
+  document.querySelectorAll('.module-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.module === name));
+  document.querySelectorAll('.module-panel').forEach(panel => panel.classList.toggle('active', panel.id === `${name}Module`));
+  const planMode = name === 'generate';
+  document.getElementById('summary').style.display = planMode ? 'grid' : 'none';
+  document.querySelector('.tabs').style.display = planMode ? 'flex' : 'none';
+  document.querySelectorAll('.view').forEach(view => view.style.display = 'none');
+  if (planMode) showView('gantt');
+  if (name === 'library' && library) renderProcessLibrary();
+  if (name === 'review') renderReview();
+  if (name === 'outputs') { document.getElementById('exportsView').style.display = 'block'; document.querySelectorAll('.module-panel').forEach(panel => panel.classList.remove('active')); }
+}
+
+function switchWorkflow(mode) {
+  workflowMode = mode;
+  document.body.dataset.workflow = mode;
+  document.querySelectorAll('.workflow-button').forEach(button => button.classList.toggle('active', button.dataset.workflow === mode));
+  document.querySelectorAll('.module-tab').forEach(tab => {
+    tab.hidden = tab.dataset.context !== 'shared' && tab.dataset.context !== mode;
+  });
+  const title = document.querySelector('#materialsModule .module-heading h2');
+  const hint = document.querySelector('#materialsModule .module-hint');
+  title.textContent = mode === 'audit' ? '审核资料中心' : '新建计划资料中心';
+  hint.textContent = mode === 'audit' ? '审核对象的图纸、工程量清单和既有计划必须属于同一项目' : '上传生成新计划所需的关键图纸和工程量清单';
+  switchModule(mode === 'audit' ? 'review' : 'configure');
+}
+
+window.switchModule = switchModule;
+window.openPlanView = name => { switchModule('generate'); showView(name); };
+
+function renderConfigureSummary(config) {
+  const features = config.features.map(feature => featureLabels[feature]).filter(Boolean).join('、');
+  const taskCount = currentPlan?.tasks?.length || 0;
+  document.getElementById('featureTaskHint').textContent = `当前启用 ${config.features.length} 项工程特征，生成 ${taskCount} 项任务：${features || '未选择工程特征'}`;
+}
+
+function analyzeProjectInputs() {
+  const drawingText = drawingFiles.map(file => `${file.name} ${file.category}`).join(' ');
+  const quantityText = quantityItems.map(item => `${item.name} ${item.feature}`).join(' ');
+  const text = `${drawingText} ${quantityText}`;
+  const rules = [
+    [/桩|桩基/, 'group','foundation_base','基础工程','图纸或清单出现桩基内容'],
+    [/围护|基坑|支撑/, 'group','foundation_support','基坑支护','图纸或清单出现基坑围护内容'],
+    [/降水|井点/, 'group','foundation_groundwater','地下水控制','资料出现降水或井点内容'],
+    [/地下室|底板|顶板|后浇带/, 'feature','basement','地下室','资料出现地下结构内容'],
+    [/钢结构|钢柱|钢梁/, 'group','structure_steel','钢结构','资料出现钢结构内容'],
+    [/幕墙/, 'group','finish_curtain_wall','幕墙','资料出现幕墙内容'],
+    [/吊顶|天花/, 'group','finish_ceiling','吊顶','资料出现吊顶内容'],
+    [/人防/, 'feature','civil_defense','人防','资料出现人防内容'],
+    [/消防|喷淋|消火栓/, 'feature','fire','消防','资料出现消防系统内容'],
+    [/电梯|扶梯/, 'group','elevator_traction','电梯工程','资料出现电梯或扶梯内容'],
+    [/智能化|弱电|综合布线|安防/, 'group','intelligent_information','信息设施系统','资料出现智能化或弱电内容'],
+    [/保温|节能/, 'group','energy_envelope_item','围护系统节能','资料出现保温或节能内容']
+  ];
+  return rules.filter(([pattern]) => pattern.test(text)).map(([,type,id,label,evidence]) => ({ type,id,label,evidence, selected:type === 'group' ? [...selectedWorkItems].some(item => item.startsWith(`${id}::`)) : Boolean(document.querySelector(`#specialFeatureList input[value="${id}"]`)?.checked) }));
+}
+
+function renderRecognition() {
+  const root = document.getElementById('recognitionPanel');
+  if (!drawingFiles.length && !quantityItems.length) {
+    root.innerHTML = '<div class="recognition-empty"><strong>等待资料</strong><span>上传图纸或清单后，系统只显示影响工期范围的识别建议和差异。</span></div>';
+    return;
+  }
+  recognitionSuggestions = analyzeProjectInputs();
+  if (!recognitionSuggestions.length) {
+    root.innerHTML = '<div class="recognition-empty"><strong>暂未发现需要调整的高影响范围</strong><span>当前仅依据文件名、人工图纸分类和清单关键词进行初步判断。</span></div>';
+    return;
+  }
+  const missing = recognitionSuggestions.filter(item => !item.selected).length;
+  const rows = recognitionSuggestions.map((item, index) => `<div class="recognition-row"><span class="recognition-state ${item.selected ? 'included' : 'pending'}">${item.selected ? '已纳入' : '待确认'}</span><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.evidence)}</small></div><button type="button" class="secondary compact" ${item.selected ? 'disabled' : ''} onclick="applyRecognitionSuggestion(${index})">${item.selected ? '无需调整' : '纳入范围'}</button></div>`).join('');
+  root.innerHTML = `<div class="recognition-note"><span>识别到 ${recognitionSuggestions.length} 项高影响内容，${missing} 项待确认。</span><small>当前原型依据文件名、图纸分类和清单关键词；后续接入DWG/PDF结构化解析后替换证据来源。</small></div>${rows}`;
+}
+
+window.applyRecognitionSuggestion = index => {
+  const suggestion = recognitionSuggestions[index];
+  if (!suggestion) return;
+  if (suggestion.type === 'group') {
+    const group = window.GB50300_CATALOG.flatMap(division => division.groups).find(item => item.id === suggestion.id);
+    group?.items.forEach((_, itemIndex) => selectedWorkItems.add(`${group.id}::${itemIndex}`));
+    syncDivisionCheckboxes();
+  } else {
+    const checkbox = document.querySelector(`#specialFeatureList input[value="${suggestion.id}"]`);
+    if (checkbox) checkbox.checked = true;
+  }
+  generatePlan();
+};
+
+async function registerExistingPlan(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  existingPlan = { name:file.name, size:file.size, type:file.name.split('.').pop().toUpperCase(), registeredAt:new Date().toISOString(), tasks:[] };
+  auditCompleted = false;
+  if (['XLSX', 'XLS'].includes(existingPlan.type)) {
+    try {
+      const response = await fetch('/api/read-xlsx', { method:'POST', headers:{ 'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }, body:await file.arrayBuffer() });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || '无法读取 Excel');
+      existingPlan.tasks = normalizeExistingPlan(payload.values);
+      existingPlan.status = `已解析 ${existingPlan.tasks.length} 项任务`;
+    } catch (error) { existingPlan.status = error.message; }
+  } else {
+    existingPlan.status = existingPlan.type === 'MPP' ? '已登记，等待 MPP 深度解析接口' : '已登记，PDF 仅用于人工对照';
+  }
+  document.getElementById('existingPlanInfo').textContent = `已登记：${file.name}。${existingPlan.status}`;
+  renderReview();
+}
+
+function normalizeExistingPlan(rows) {
+  if (!rows?.length) return [];
+  const headers = rows[0].map(value => String(value ?? '').trim());
+  const find = names => headers.findIndex(header => names.includes(header));
+  const name = find(['任务名称','任务名','名称','Task Name']);
+  const duration = find(['工期','工期（天）','持续时间','Duration']);
+  const predecessors = find(['前置任务','前置任务名称','前置任务编号','Predecessors']);
+  if (name < 0) throw new Error('Excel 计划缺少“任务名称”列');
+  return rows.slice(1).map((row, index) => ({ id:index + 1, name:String(row[name] ?? '').trim(), duration:duration < 0 ? null : parseDuration(row[duration]), predecessors:predecessors < 0 ? '' : String(row[predecessors] ?? '').trim() })).filter(task => task.name);
+}
+
+function parseDuration(value) { const number = Number(String(value ?? '').replace(/[^0-9.]/g, '')); return Number.isFinite(number) && number > 0 ? number : null; }
+
+function renderReview() {
+  const root = document.getElementById('reviewPanel');
+  const hasDrawings = drawingFiles.length > 0;
+  const hasQuantities = quantityItems.length > 0;
+  const hasPlan = Boolean(existingPlan);
+  const ready = hasDrawings && hasQuantities && hasPlan;
+  const results = ready && auditCompleted ? compareExistingPlan() : [];
+  root.innerHTML = `<div class="review-status"><div><strong>${!ready ? '需补齐审查资料' : auditCompleted ? '审核已完成' : '资料齐全，等待开始审核'}</strong><span>${ready ? `既有计划 ${escapeHtml(existingPlan.name)} 将与工序库基准、图纸资料和清单工程量对比。` : '既有计划审查必须同时提供该项目的关键图纸和工程量清单。'}</span></div><button id="startAudit" class="primary compact" ${ready ? '' : 'disabled'}>${auditCompleted ? '重新审核' : '开始审核'}</button></div><div class="review-checks"><div class="review-check"><small>关键图纸</small><strong class="${hasDrawings ? 'review-ready' : 'review-missing'}">${hasDrawings ? `已登记 ${drawingFiles.length} 份` : '未上传'}</strong></div><div class="review-check"><small>工程量清单</small><strong class="${hasQuantities ? 'review-ready' : 'review-missing'}">${hasQuantities ? `已导入 ${quantityItems.length} 项` : '未上传'}</strong></div><div class="review-check"><small>既有进度计划</small><strong class="${hasPlan ? 'review-ready' : 'review-missing'}">${hasPlan ? `${escapeHtml(existingPlan.name)} · ${escapeHtml(existingPlan.status || '')}` : '未上传'}</strong></div></div><div class="drawing-note">审查内容：工序遗漏、前后逻辑、技术间歇、关键线路、工程量与工期匹配、资源超配、跨楼栋/施工区流水及专项验收条件。</div>${results.length ? `<div class="review-results">${results.map(result => `<article class="issue ${result.level}"><strong>${escapeHtml(result.title)}</strong><p>${escapeHtml(result.text)}</p></article>`).join('')}</div>` : auditCompleted && ready ? '<div class="drawing-note">文件已登记，但当前格式尚不能自动提取任务进行深度对比。</div>' : ''}`;
+}
+
+function startExistingPlanAudit() {
+  if (!drawingFiles.length || !quantityItems.length || !existingPlan) return;
+  auditCompleted = true;
+  renderReview();
+}
+
+function compareExistingPlan() {
+  if (!existingPlan?.tasks?.length || !currentPlan) return [];
+  const normalize = value => value.replace(/[\s（）()#号\-·]/g, '').replace(/施工|工程/g, '');
+  const standardNames = [...new Set(currentPlan.tasks.map(task => task.name))];
+  const existingNames = existingPlan.tasks.map(task => normalize(task.name));
+  const missing = standardNames.filter(name => !existingNames.some(existing => existing.includes(normalize(name)) || normalize(name).includes(existing)));
+  const isolated = existingPlan.tasks.filter(task => !task.predecessors).length;
+  const durationIssues = existingPlan.tasks.filter(task => {
+    const standard = currentPlan.tasks.find(candidate => normalize(candidate.name) === normalize(task.name));
+    return standard && task.duration && (task.duration > standard.duration * 2 || task.duration < Math.max(1, standard.duration * 0.5));
+  });
+  const results = [];
+  if (missing.length) results.push({ level:'warn', title:`可能遗漏 ${missing.length} 类标准工序`, text:`示例：${missing.slice(0, 6).join('、')}。需结合图纸适用范围逐项确认。` });
+  if (isolated) results.push({ level:'warn', title:`发现 ${isolated} 项无前置关系任务`, text:'无前置关系不一定错误，但需检查是否形成孤立任务或错误固定日期。' });
+  if (durationIssues.length) results.push({ level:'warn', title:`发现 ${durationIssues.length} 项工期明显偏离模板`, text:`示例：${durationIssues.slice(0, 5).map(task => `${task.name} ${task.duration}天`).join('、')}。` });
+  if (!results.length) results.push({ level:'', title:'初步对比未发现明显异常', text:'仍需继续检查 Project 逻辑类型、技术间歇、资源和图纸范围。' });
+  return results;
+}
+
+function renderProcessLibrary() {
+  const root = document.getElementById('processLibrary');
+  const grouped = new Map();
+  library.packages.forEach(pack => { const stage = pack.stage || packageStage(pack.id); if (!grouped.has(stage)) grouped.set(stage, []); grouped.get(stage).push(pack); });
+  root.innerHTML = [...grouped.entries()].map(([stage, packages]) => `<section class="process-stage"><h3>${escapeHtml(stage)}</h3><div class="process-stage-list">${packages.map(pack => {
+    const tasks = pack.tasks.map(([id,name,mode,days,resources]) => `<tr><td>${escapeHtml(name)}</td><td>${mode === 'fixed' ? '固定工期' : mode === 'productivity' ? '功效计算' : '技术条件'}</td><td>${mode === 'fixed' ? `${days} 天` : mode === 'productivity' ? '按工程量' : '按规则'}</td><td>${escapeHtml(templateLogic(pack, id))}</td><td>${resources.join('、') || '无'}</td></tr>`).join('');
+    return `<details class="process-package"><summary>${escapeHtml(pack.name)}<span>${scopeLabel(pack.scope)} · ${pack.tasks.length} 道工序</span></summary><div class="process-table-shell"><table class="process-table"><thead><tr><th>工序</th><th>工期方式</th><th>默认值</th><th>前后逻辑</th><th>资源</th></tr></thead><tbody>${tasks}</tbody></table></div></details>`;
+  }).join('')}</div></section>`).join('');
+}
+
+function templateLogic(pack, templateId) {
+  const names = new Map(pack.tasks.map(([id, name]) => [id, name]));
+  const predecessors = [];
+  (pack.chains || []).forEach(chain => chain.forEach((id, index) => { if (id === templateId && index > 0) predecessors.push(`${names.get(chain[index - 1])}（FS）`); }));
+  (pack.conditionalLinks || []).filter(link => link.to === templateId).forEach(link => predecessors.push(`${names.get(link.from)}（条件）`));
+  const custom = customProcesses.find(process => `${process.id}_task` === templateId);
+  if (custom?.predecessorTemplateId) predecessors.push(`${custom.predecessorName || '指定前置工序'}（${custom.relation || 'FS'}${custom.lag ? `+${custom.lag}天` : ''}）`);
+  const before = predecessors.length ? `前置：${[...new Set(predecessors)].join('；')}` : '阶段起始/由跨阶段逻辑控制';
+  return custom?.successorTemplateId ? `${before}；后续：${custom.successorName || '指定后续工序'}（FS）` : before;
+}
+
+function packageStage(id) {
+  if (id === 'preparation') return '1. 施工准备';
+  if (['pile_and_excavation','basement_structure'].includes(id)) return '2. 地基基础与地下结构';
+  if (['superstructure_cycle','secondary_structure'].includes(id)) return '3. 主体与二次结构';
+  if (['roof','facade','interior_finish','building_energy'].includes(id)) return '4. 屋面、外立面与装修';
+  if (['mep','intelligent_building','elevator'].includes(id)) return '5. 机电与设备安装';
+  if (id === 'external_works') return '6. 市政与景观';
+  if (id === 'acceptance') return '7. 验收与移交';
+  return '8. 自定义工序';
+}
+
+function scopeLabel(scope) { return ({ project:'项目级', building:'楼栋级', zone:'施工区级', floor:'楼层级' })[scope] || scope; }
+
+function addCustomProcess(event) {
+  event.preventDefault();
+  const predecessor = document.getElementById('customPredecessor');
+  const successor = document.getElementById('customSuccessor');
+  const [predecessorPackageId, predecessorTemplateId] = predecessor.value.split('::');
+  const [successorPackageId, successorTemplateId] = successor.value.split('::');
+  const process = { id:`custom_${Date.now()}`, stage:document.getElementById('customStage').value.trim(), discipline:document.getElementById('customDiscipline').value.trim(), name:document.getElementById('customName').value.trim(), duration:Number(document.getElementById('customDuration').value), scope:document.getElementById('customScope').value, feature:document.getElementById('customFeature').value.trim(), predecessorPackageId, predecessorPackage:library.packages.find(pack => pack.id === predecessorPackageId)?.name || '', predecessorTemplateId, predecessorName:predecessor.options[predecessor.selectedIndex]?.textContent.split(' / ').pop() || '', successorPackageId, successorPackage:library.packages.find(pack => pack.id === successorPackageId)?.name || '', successorTemplateId, successorName:successor.options[successor.selectedIndex]?.textContent.split(' / ').pop() || '', relation:document.getElementById('customRelation').value, lag:Number(document.getElementById('customLag').value) || 0 };
+  customProcesses.push(process); installCustomProcess(process); closeProcessDialog(); event.target.reset(); renderProcessLibrary(); generatePlan();
+}
+
+function renderPredecessorOptions() {
+  const select = document.getElementById('customPredecessor');
+  const options = library.packages.filter(pack => !pack.id.startsWith('custom_')).flatMap(pack => pack.tasks.map(([id, name]) => `<option value="${escapeHtml(pack.id)}::${escapeHtml(id)}">${escapeHtml(packageStage(pack.id))} / ${escapeHtml(pack.name)} / ${escapeHtml(name)}</option>`)).join('');
+  select.innerHTML = options;
+  const successor = document.getElementById('customSuccessor');
+  successor.innerHTML = options;
+  successor.selectedIndex = Math.min(1, successor.options.length - 1);
+}
+
+function openProcessDialog() {
+  renderPredecessorOptions();
+  const dialog = document.getElementById('processDialog');
+  if (!dialog.open) dialog.showModal();
+}
+
+function closeProcessDialog() {
+  const dialog = document.getElementById('processDialog');
+  if (dialog.open) dialog.close();
+}
+
+function installCustomProcess(process) {
+  if (library.packages.some(pack => pack.id === process.id)) return;
+  library.packages.push({ id:process.id, stage:process.stage, name:process.discipline, scope:process.scope, features:process.feature ? [process.feature] : [], tasks:[[`${process.id}_task`,process.name,'fixed',process.duration,[]]], chains:[], conditionalLinks:[] });
+}
+
+function registerDrawings(event) {
+  [...event.target.files].forEach(file => {
+    const lowerName = file.name.toLowerCase();
+    drawingFiles.push({ id: `${Date.now()}-${file.name}`, name: file.name, size: file.size, type: lowerName.endsWith('.dwg') ? 'DWG' : lowerName.endsWith('.dxf') ? 'DXF' : 'PDF', category: inferDrawingCategory(file.name), status: '待解析' });
+  });
+  event.target.value = '';
+  auditCompleted = false;
+  renderDrawings();
+  renderRecognition();
+  renderReview();
+}
+
+function inferDrawingCategory(name) {
+  const text = name.toLowerCase();
+  if (/围护|基坑|支撑|降水/.test(text)) return '基坑围护';
+  if (/桩|基础/.test(text)) return '桩基/基础';
+  if (/底板|顶板|后浇带|地下室/.test(text)) return '地下结构';
+  if (/标准层|结构平面|屋面结构/.test(text)) return '主体结构';
+  if (/建筑说明/.test(text)) return '建筑说明';
+  if (/结构说明/.test(text)) return '结构说明';
+  return '待分类';
+}
+
+function renderDrawings() {
+  const root = document.getElementById('drawingList');
+  if (!drawingFiles.length) { root.innerHTML = '<div class="empty">尚未登记图纸。首期需要建筑/结构说明、总平或首层、基础或围护、地下室后浇带图（如有）及标准层/屋面结构平面。</div>'; return; }
+  const categories = ['待分类','建筑说明','结构说明','总平/首层','桩基/基础','基坑围护','地下结构','主体结构','屋面/外立面','机电/装修'];
+  const rows = drawingFiles.map((file, index) => `<div class="drawing-row"><strong>${escapeHtml(file.name)}</strong><span>${file.type} · ${(file.size / 1024 / 1024).toFixed(1)} MB</span><select onchange="setDrawingCategory(${index}, this.value)">${categories.map(category => `<option ${file.category === category ? 'selected' : ''}>${category}</option>`).join('')}</select><span>${file.status}<br><small>已登记本地资料包</small></span></div>`).join('');
+  root.innerHTML = `<div class="drawing-note">原始图纸不会上传或复制到服务器。当前原型登记文件信息和类别；DWG/PDF 结构化解析需本机 CAD 转换组件与样例图纸图层规则后启用。</div><div class="drawing-row header"><span>文件</span><span>格式/大小</span><span>资料类别</span><span>处理状态</span></div>${rows}`;
+}
+
+window.setDrawingCategory = (index, category) => { const file = drawingFiles[index]; if (file) { file.category = category; renderDrawings(); renderRecognition(); } };
+
+function exportPlanCsv() {
+  if (!currentPlan) return;
+  const rows = [['阶段','位置','工序','工程量','单位','工期（天）','开始','完成','关键任务','前置任务','资源']];
+  currentPlan.tasks.forEach(task => rows.push([task.pack, task.scope, task.name, task.quantity || '', task.unit, task.duration, formatDate(task.start), formatDate(task.finish), task.critical ? '是' : '否', task.predecessors.map(link => `${link.from.scope}·${link.from.name}`).join('；'), task.resources.join('、')]));
+  downloadBlob(`进度计划_${currentPlan.config.name}.csv`, new Blob(['\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n')], { type:'text/csv;charset=utf-8' }));
+}
+
+function exportPlanJson() {
+  if (!currentPlan) return;
+  const payload = { project: currentPlan.config, zones: zoneSettings, drawings: drawingFiles, quantities: quantityItems, tasks: currentPlan.tasks.map(task => ({ id:task.id, phase:task.pack, location:task.scope, process:task.name, quantity:task.quantity, unit:task.unit, durationDays:task.duration, start:formatDate(task.start), finish:formatDate(task.finish), critical:task.critical, resources:task.resources, predecessors:task.predecessors.map(link => ({ taskId:link.from.id, relation:link.relation, source:link.source })) })) };
+  downloadBlob(`进度计划_${currentPlan.config.name}.json`, new Blob([JSON.stringify(payload, null, 2)], { type:'application/json;charset=utf-8' }));
+}
+
+async function exportPlanMpp() {
+  if (!currentPlan) return;
+  const button = document.getElementById('exportMpp');
+  button.disabled = true; button.textContent = '正在生成 MPP';
+  try {
+    const payload = {
+      tasks: currentPlan.tasks.map(task => ({ id:task.id, name:`${task.scope} - ${task.name}`, durationDays:task.duration, start:new Date(task.start).toISOString().slice(0,10), predecessors:task.predecessors.map(link => link.from.id) }))
+    };
+    const response = await fetch('/api/export-mpp', { method:'POST', headers:{ 'Content-Type':'application/json;charset=utf-8' }, body:JSON.stringify(payload) });
+    if (!response.ok) { const error = await response.json(); throw new Error(error.error || 'MPP 导出失败'); }
+    downloadBlob(`进度计划_${currentPlan.config.name}.mpp`, await response.blob());
+    document.getElementById('status').textContent = 'MPP 文件已由本机 Microsoft Project 生成';
+  } catch (error) {
+    document.getElementById('status').textContent = error.message;
+  } finally {
+    button.disabled = false; button.textContent = '导出 Project MPP';
+  }
+}
+
+function csvCell(value) { const text = String(value ?? ''); return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
+function downloadBlob(name, blob) { const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = name; link.click(); URL.revokeObjectURL(link.href); }
+
+function renderScenarios(config, baselineFinish) {
+  const root = document.getElementById('scenarioList');
+  const candidates = [
+    { id:'rebar', name:'增加 1 个钢筋班组', detail:'钢筋班组数量 +1', changes:{ rebar: 1 } },
+    { id:'formwork', name:'增加模板班组和周转料', detail:'模板班组 +1，模板/支模架套数 +1', changes:{ formwork: 1, template: 1 } },
+    { id:'masonry', name:'增加 1 个砌筑班组', detail:'砌筑班组数量 +1', changes:{ masonry: 1 } },
+    { id:'mep', name:'增加 1 个机电班组', detail:'机电班组数量 +1', changes:{ mep: 1 } }
+  ];
+  const scenarios = candidates.map(candidate => {
+    const scenarioConfig = structuredClone(config);
+    Object.entries(candidate.changes).forEach(([key, increase]) => { scenarioConfig.resources[key] += increase; });
+    const plan = buildPlan(scenarioConfig);
+    const finish = Math.max(...plan.tasks.map(task => task.finish));
+    return { ...candidate, finish, gain: Math.max(0, Math.round((baselineFinish - finish) / DAY)), critical: plan.tasks.filter(task => task.critical).length };
+  }).sort((a, b) => b.gain - a.gain);
+  const rows = scenarios.map(scenario => `<div class="scenario-row"><strong>${scenario.name}</strong><span>${scenario.detail}</span><span>${formatDate(scenario.finish)}</span><span>提前 ${scenario.gain} 天</span><button type="button" onclick="applyScenario('${scenario.id}')">应用方案</button></div>`).join('');
+  root.innerHTML = `<div class="scenario-note">方案在当前工序、工程量和资源约束下自动试算。它不改变基准计划；点击“应用方案”后才将资源配置写回当前计划。</div><div class="scenario-row header"><span>方案</span><span>资源调整</span><span>预计竣工</span><span>相对基准</span><span>操作</span></div><div class="scenario-row"><strong>基准方案</strong><span>当前资源配置</span><span>${formatDate(baselineFinish)}</span><span>—</span><span>当前</span></div>${rows}`;
+}
+
+window.applyScenario = id => {
+  const controls = {
+    rebar: [['rebarTeams', 1]], formwork: [['formworkTeams', 1], ['templateSets', 1]], masonry: [['masonryTeams', 1]], mep: [['mepTeams', 1]]
+  };
+  controls[id].forEach(([control, increase]) => {
+    const input = document.getElementById(control);
+    input.value = Number(input.value) + increase;
+  });
+  generatePlan();
+};
+
+function renderResources(tasks, config) {
+  const root = document.getElementById('resourceList');
+  const labels = { rebar_team:'钢筋班组', formwork_team:'模板班组', masonry_team:'砌筑班组', plaster_team:'抹灰班组', mep_team:'机电班组', template_set:'模板套数', shoring_set:'支模架套数', tower_crane:'塔吊', construction_hoist:'施工电梯', concrete_team:'混凝土班组', concrete_pump:'混凝土泵' };
+  const rows = [...new Set(tasks.flatMap(task => task.resources))].map(resource => {
+    const used = tasks.filter(task => task.resources.includes(resource) && task.duration > 0);
+    const flows = currentPlan.resourceLinks.filter(link => link.resource === resource);
+    const example = flows[0];
+    return `<div class="resource-row"><strong>${labels[resource] || resource}</strong><span>配置 ${resourceCapacity(resource, config)}</span><span>峰值 ${maxConcurrentTasks(used)}</span><span>${example ? `已建立 ${flows.length} 条资源流水，例如 ${example.from.scope}·${example.from.name} -> ${example.to.scope}·${example.to.name}` : '无跨作业面资源排队关系'}</span></div>`;
+  }).join('');
+  root.innerHTML = `<div class="resource-note">资源流水关系已写入任务网络。修改班组数量或周转料套数后，系统重新分配资源通道并计算关键线路。</div><div class="resource-row header"><span>资源</span><span>可用数量</span><span>计划峰值</span><span>流水关系</span></div>${rows}`;
+}
+
+function maxConcurrentTasks(tasks) {
+  const points = tasks.flatMap(task => [{ time: task.start, delta: 1 }, { time: task.finish, delta: -1 }]).sort((a, b) => a.time - b.time || a.delta - b.delta);
+  let active = 0; let maximum = 0;
+  points.forEach(point => { active += point.delta; maximum = Math.max(maximum, active); });
+  return maximum;
+}
+
+function renderZones(config) {
+  const root = document.getElementById('zoneList');
+  if (!config.features.includes('basement')) {
+    root.innerHTML = '<div class="empty">未启用地下室工序包。地下施工区仅在基坑或地下结构项目中需要确认。</div>';
+    return;
+  }
+  ensureZoneSettings(Math.max(config.zones, 1));
+  const rows = zoneSettings.map((zone, index) => `<div class="zone-row"><label>施工区名称<input data-zone-index="${index}" data-zone-field="name" value="${escapeHtml(zone.name)}" oninput="setZoneDraft(${index},'name',this.value)"></label><label>包含后浇带区<input data-zone-index="${index}" data-zone-field="postPourCount" type="number" min="1" value="${zone.postPourCount}" oninput="setZoneDraft(${index},'postPourCount',this.value)"></label><label>开挖顺序<select data-zone-index="${index}" data-zone-field="order" onchange="setZoneDraft(${index},'order',this.value)">${zoneSettings.map((_, order) => `<option value="${order + 1}" ${zone.order === order + 1 ? 'selected' : ''}>第 ${order + 1} 顺位</option>`).join('')}</select></label><span>独立技术间歇<br><small>支撑强度：${config.supportWaitDays} 天</small></span></div>`).join('');
+  root.innerHTML = `<div class="zone-note">一个施工区可包含多个后浇带区。修改任意行后点击“应用施工区设置”，系统按开挖顺序重建流水关系。</div><div class="zone-row header"><span>施工区</span><span>后浇带区</span><span>开挖顺序</span><span>技术条件</span></div>${rows}<div class="zone-actions"><span id="zoneEditStatus">可编辑全部 ${zoneSettings.length} 个施工区</span><button type="button" class="primary compact" onclick="applyZoneSettings()">应用施工区设置</button></div>`;
+}
+
+window.setZoneDraft = (index, field, value) => {
+  if (!zoneSettings[index]) return;
+  zoneSettings[index][field] = ['postPourCount','order'].includes(field) ? Number(value) : value;
+  const status = document.getElementById('zoneEditStatus');
+  if (status) status.textContent = `第 ${index + 1} 行已修改，尚未重新计算`;
+};
+
+window.applyZoneSettings = () => generatePlan();
+
+function renderMapping(tasks) {
+  const root = document.getElementById('mappingList');
+  if (!quantityItems.length) {
+    root.innerHTML = '<div class="empty">尚未导入清单。导入 Excel 或 CSV 后，可在此确认每项工程量的工序映射。</div>';
+    return;
+  }
+  const options = [['auto','自动匹配'],['rebar','钢筋'],['masonry','砌筑'],['plaster','抹灰'],['waterproof','防水'],['concrete','混凝土']];
+  const rows = quantityItems.map(item => {
+    const count = tasks.filter(task => task.quantitySource === item.name).length;
+    const select = options.map(([value,label]) => `<option value="${value}" ${item.mapping === value ? 'selected' : ''}>${label}</option>`).join('');
+    return `<div class="mapping-row"><span>${item.name}<br><small>${item.feature || '未提供项目特征描述'}</small></span><span>${item.quantity} ${item.unit}</span><select onchange="setQuantityMapping(${item.id}, this.value)">${select}</select><span>${count ? `已建议分摊至 ${count} 项任务` : '未映射'}</span><span>${item.mapping === 'auto' ? '需核对' : '人工指定'}</span></div>`;
+  }).join('');
+  root.innerHTML = `<div class="mapping-note">清单未含楼栋、楼层或施工区时，工程量将按同类任务平均分摊。确认映射类型后，系统重新计算功效型任务工期。</div><div class="mapping-row header"><span>清单项目</span><span>工程量</span><span>工序类型</span><span>建议分摊</span><span>来源</span></div>${rows}`;
+}
+
+window.setQuantityMapping = (id, mapping) => {
+  const item = quantityItems.find(candidate => candidate.id === id);
+  if (!item) return;
+  item.mapping = mapping;
+  generatePlan();
+};
+
+function renderGantt(tasks, start) {
+  const hierarchy = buildGanttHierarchy(tasks, currentPlan.config);
+  if (!ganttInitialized) {
+    hierarchy.children.forEach(node => ganttCollapsed.add(node.id));
+    ganttInitialized = true;
+  }
+  const shown = flattenGanttHierarchy(hierarchy);
+  const end = Math.max(...tasks.map(task => task.finish));
+  const days = Math.min(30, Math.max(1, Math.ceil((end - start.getTime()) / DAY)));
+  const headers = Array.from({length:days}, (_, index) => `<th>${index + 1}</th>`).join('');
+  document.querySelector('#ganttTable thead').innerHTML = `<tr><th>WBS</th><th>层级名称</th><th>位置</th><th>工程量</th><th>开始</th><th>完成</th><th>工期</th>${headers}</tr>`;
+  document.querySelector('#ganttTable tbody').innerHTML = shown.map(row => {
+    const offset = Math.floor((row.start - start.getTime()) / DAY); const duration = Math.max(1, Math.ceil((row.finish - row.start) / DAY));
+    const cells = Array.from({length:days}, (_, index) => index >= offset && index < offset + duration ? `<td><span class="bar ${row.critical ? 'critical' : ''} ${row.mode === 'condition' ? 'condition' : ''} ${row.level < 5 ? 'summary-bar' : ''}"></span></td>` : '<td></td>').join('');
+    const quantity = row.level === 5 && row.quantity ? `${row.quantity.toFixed(2)} ${row.unit}` : '—';
+    const toggle = row.children.length ? `<button type="button" class="wbs-toggle" onclick="toggleGanttNode('${row.id}')" aria-label="${ganttCollapsed.has(row.id) ? '展开' : '收起'}">${ganttCollapsed.has(row.id) ? '›' : '⌄'}</button>` : '<span class="wbs-leaf"></span>';
+    return `<tr class="wbs-row level-${row.level} ${row.level < 5 ? 'summary-row' : 'task-row'}"><td>${row.wbs}</td><td class="wbs-name" style="--wbs-level:${row.level}">${toggle}<span>${escapeHtml(row.name)}</span></td><td>${escapeHtml(row.location || '—')}</td><td>${quantity}</td><td>${formatDate(row.start)}</td><td>${formatDate(row.finish)}</td><td>${row.mode === 'condition' ? '条件' : `${duration} 天`}</td>${cells}</tr>`;
+  }).join('');
+}
+
+function buildGanttHierarchy(tasks, config) {
+  const root = ganttNode('project-root', config.name, 1, '工程项目');
+  const level2 = new Map();
+  const level3 = new Map();
+  const level4 = new Map();
+  [...tasks].sort((a,b) => a.start - b.start || a.rank - b.rank).forEach(task => {
+    const group = ganttLevel2(task);
+    const groupNode = getGanttGroup(level2, group.id, () => ganttNode(`l2:${group.id}`, group.name, 2, group.location, group.order, root));
+    const location = ganttLevel3(task, group);
+    const locationKey = `${group.id}:${location.id}`;
+    const locationNode = getGanttGroup(level3, locationKey, () => ganttNode(`l3:${locationKey}`, location.name, 3, location.name, location.order, groupNode));
+    const phase = ganttLevel4(task);
+    const phaseKey = `${locationKey}:${phase.id}`;
+    const phaseNode = getGanttGroup(level4, phaseKey, () => ganttNode(`l4:${phaseKey}`, phase.name, 4, location.name, phase.order, locationNode));
+    const leaf = ganttNode(`task:${task.id}`, task.name, 5, task.scope, task.rank, phaseNode, task);
+    phaseNode.children.push(leaf);
+  });
+  sortAndSummarizeGantt(root);
+  return root;
+}
+
+function ganttNode(id, name, level, location = '', order = 0, parent = null, task = null) {
+  const node = { id, name, level, location, order, parent, children:[], task, start:task?.start, finish:task?.finish, critical:task?.critical, mode:task?.mode, quantity:task?.quantity, unit:task?.unit };
+  if (parent && level < 5) parent.children.push(node);
+  return node;
+}
+
+function getGanttGroup(map, key, create) { if (!map.has(key)) map.set(key, create()); return map.get(key); }
+
+function ganttLevel2(task) {
+  if (task.pack === '项目准备与临建') return { id:'preparation', name:'施工准备', location:'项目', order:10 };
+  if (task.pack === '桩基与基坑工程') return { id:'pile', name:'桩基与基坑围护', location:'地下工程', order:20 };
+  if (task.pack === '基础与地下结构') return { id:'basement', name:'地下室', location:'地下工程', order:30 };
+  if (task.pack === '专项验收、联合验收与移交') return { id:'acceptance', name:'专项验收与移交', location:'项目', order:90 };
+  if (task.pack === '市政、景观与室外工程') return { id:'external', name:'室外配套', location:'室外工程区', order:80 };
+  const match = task.scope.match(/^(\d+)#楼/);
+  if (match) return { id:`building-${match[1]}`, name:`${match[1]}#楼`, location:`${match[1]}#楼`, order:40 + Number(match[1]) };
+  return { id:`other-${task.pack}`, name:task.pack, location:task.scope, order:70 };
+}
+
+function ganttLevel3(task, group) {
+  if (group.id.startsWith('building-')) {
+    const floor = task.scope.match(/(\d+)层$/);
+    return floor ? { id:`floor-${floor[1]}`, name:`${floor[1]}层`, order:Number(floor[1]) } : { id:'whole-building', name:'整栋及屋面', order:100 };
+  }
+  if (group.id === 'pile' || group.id === 'basement') {
+    const zoneIndex = zoneSettings.findIndex(zone => zone.name === task.scope);
+    return { id:`zone-${zoneIndex >= 0 ? zoneIndex + 1 : task.scope}`, name:task.scope, order:zoneIndex >= 0 ? zoneSettings[zoneIndex].order : 99 };
+  }
+  return { id:'project-scope', name:task.scope || '项目级', order:1 };
+}
+
+function ganttLevel4(task) {
+  const phase = {
+    '项目准备与临建':['preparation','施工准备',10], '桩基与基坑工程':['foundation','桩基与基坑围护',20], '基础与地下结构':['basement','基础及地下结构',30],
+    '地上主体标准层循环':['structure','主体结构',40], '二次结构与结构验收':['secondary','二次结构及结构验收',50], '屋面工程':['roof','屋面工程',60],
+    '外墙、门窗、保温与幕墙':['facade','外立面工程',70], '室内毛坯、精装与公区':['finish','装饰装修',80], '机电安装与调试':['mep','机电安装',90],
+    '智能建筑系统':['intelligent','智能建筑',100], '建筑节能工程':['energy','建筑节能',110], '电梯工程':['elevator','电梯工程',120],
+    '市政、景观与室外工程':['external','市政景观',130], '专项验收、联合验收与移交':['acceptance','专项验收及移交',140]
+  }[task.pack] || [task.pack, task.pack, 150];
+  if (task.templateId === 'structural_acceptance') return { id:'structure-acceptance', name:'结构验收', order:55 };
+  return { id:phase[0], name:phase[1], order:phase[2] };
+}
+
+function sortAndSummarizeGantt(node) {
+  node.children.sort((a,b) => a.order - b.order || a.name.localeCompare(b.name, 'zh-CN'));
+  node.children.forEach(sortAndSummarizeGantt);
+  if (node.children.length) {
+    node.start = Math.min(...node.children.map(child => child.start)); node.finish = Math.max(...node.children.map(child => child.finish));
+    node.critical = node.children.some(child => child.critical);
+  }
+}
+
+function flattenGanttHierarchy(root) {
+  const rows = [];
+  const visit = (node, prefix) => {
+    node.wbs = prefix; rows.push(node);
+    if (ganttCollapsed.has(node.id)) return;
+    node.children.forEach((child, index) => visit(child, prefix ? `${prefix}.${index + 1}` : `${index + 1}`));
+  };
+  visit(root, '1'); return rows;
+}
+
+window.toggleGanttNode = id => { ganttCollapsed.has(id) ? ganttCollapsed.delete(id) : ganttCollapsed.add(id); renderGantt(currentPlan.tasks, currentPlan.config.start); };
+window.expandAllGantt = () => { ganttCollapsed.clear(); renderGantt(currentPlan.tasks, currentPlan.config.start); };
+window.collapseGanttToLevel2 = () => {
+  ganttCollapsed.clear();
+  const hierarchy = buildGanttHierarchy(currentPlan.tasks, currentPlan.config);
+  hierarchy.children.forEach(node => ganttCollapsed.add(node.id));
+  renderGantt(currentPlan.tasks, currentPlan.config.start);
+};
+
+function renderNetwork(tasks) {
+  const scope = document.getElementById('networkScope').value;
+  const selected = (scope === 'critical' ? tasks.filter(task => task.critical) : tasks).filter(task => task.predecessors.length || task.successors.length).sort((a, b) => a.rank - b.rank).slice(0, 70);
+  if (!selected.length) {
+    document.getElementById('networkList').innerHTML = '<div class="empty">当前没有可显示的任务逻辑。</div>';
+    return;
+  }
+  const selectedSet = new Set(selected);
+  const levels = new Map();
+  const levelOf = task => {
+    if (levels.has(task)) return levels.get(task);
+    const predecessors = task.predecessors.map(link => link.from).filter(node => selectedSet.has(node));
+    const level = predecessors.length ? Math.max(...predecessors.map(levelOf)) + 1 : 0;
+    levels.set(task, level); return level;
+  };
+  selected.forEach(levelOf);
+  const columns = new Map();
+  selected.forEach(task => { const level = levels.get(task); if (!columns.has(level)) columns.set(level, []); columns.get(level).push(task); });
+  const activityWidth = 150; const gapX = 90; const gapY = 82;
+  const maxRows = Math.max(...[...columns.values()].map(items => items.length));
+  const maxLevel = Math.max(...levels.values());
+  const width = Math.max(820, (maxLevel + 1) * (activityWidth + gapX) + activityWidth + 80);
+  const height = Math.max(320, maxRows * gapY + 70);
+  const positions = new Map();
+  [...columns.entries()].sort((a,b) => a[0] - b[0]).forEach(([level, items]) => {
+    items.sort((a,b) => a.start - b.start || a.rank - b.rank).forEach((task, index) => positions.set(task, { x: 42 + level * (activityWidth + gapX), y: 42 + index * gapY }));
+  });
+  const dummyEdges = selected.flatMap(task => task.successors.filter(link => selectedSet.has(link.to)).map(link => {
+    const from = positions.get(task); const to = positions.get(link.to);
+    return `<path class="aoa-dummy" d="M ${from.x + activityWidth} ${from.y} L ${to.x} ${to.y}" marker-end="url(#dummyArrow)"><title>${escapeHtml(`${link.relation}${link.lag ? `+${link.lag}天` : ''} · ${link.source}`)}</title></path>`;
+  })).join('');
+  const activities = selected.map((task, index) => {
+    const point = positions.get(task); const duration = task.mode === 'condition' ? '技术条件' : `${task.duration}天`;
+    const label = escapeHtml(task.name.length > 13 ? `${task.name.slice(0, 13)}...` : task.name);
+    const marker = task.critical ? 'url(#criticalArrow)' : 'url(#activityArrow)';
+    return `<g class="aoa-activity ${task.critical ? 'critical' : ''} ${task.mode === 'condition' ? 'condition' : ''}"><title>${escapeHtml(`${task.scope} · ${task.name} · ${duration}`)}</title><line x1="${point.x + 15}" y1="${point.y}" x2="${point.x + activityWidth - 15}" y2="${point.y}" marker-end="${marker}"></line><text x="${point.x + activityWidth / 2}" y="${point.y - 12}" text-anchor="middle">${label}</text><text class="aoa-duration" x="${point.x + activityWidth / 2}" y="${point.y + 20}" text-anchor="middle">${duration}</text><circle cx="${point.x}" cy="${point.y}" r="15"></circle><text class="aoa-event" x="${point.x}" y="${point.y + 4}" text-anchor="middle">${index * 2 + 1}</text><circle cx="${point.x + activityWidth}" cy="${point.y}" r="15"></circle><text class="aoa-event" x="${point.x + activityWidth}" y="${point.y + 4}" text-anchor="middle">${index * 2 + 2}</text></g>`;
+  }).join('');
+  document.getElementById('networkList').innerHTML = `<div class="network-legend"><span><i class="solid"></i>实箭线：工序</span><span><i class="dummy"></i>虚箭线：逻辑关系</span><span><i class="critical"></i>关键线路</span></div><svg class="network-diagram" role="img" aria-label="${scope === 'critical' ? '关键线路双代号网络图' : '施工任务双代号网络图'}" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs><marker id="activityArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#61727c"></path></marker><marker id="criticalArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#b84242"></path></marker><marker id="dummyArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#aab4ba"></path></marker></defs>${dummyEdges}${activities}</svg><div class="network-caption">双代号表达：圆圈为事件，实箭线为消耗时间的工序，虚箭线仅传递前后逻辑。当前显示 ${selected.length} 项任务。</div>`;
+}
+
+function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[character])); }
+
+function inspect(tasks, config) {
+  const issues = [];
+  const plannedFinish = Math.max(...tasks.map(task => task.finish));
+  const overrun = Math.ceil((plannedFinish - config.finish.getTime()) / DAY);
+  if (overrun > 0) issues.push({ level:'error', title:`预计超过合同竣工日期 ${overrun} 天`, text:`合同总工期 ${config.totalCalendarDays} 日历天，当前资源和逻辑条件下预计 ${formatDate(plannedFinish)} 完成，应进行资源、流水或工序逻辑优化。` });
+  if (config.zones > 1 && config.resources.rebar < 2) issues.push({ level:'warn', title:'跨施工区共享钢筋班组', text:'当前仅配置 1 个钢筋班组。地下施工区可交叉推进时，应由资源优化模块决定实际流水顺序。' });
+  if (config.floors >= 5 && !config.features.includes('superstructure')) issues.push({ level:'error', title:'主体结构工序包未启用', text:'项目填写了地上层数，但没有启用主体结构工序包。' });
+  if (config.features.includes('basement') && config.zones === 0) issues.push({ level:'error', title:'地下室未划分施工区', text:'地下室计划需要至少一个施工区，才能组织后浇带和技术间歇流水。' });
+  if (config.resources.template < config.buildings && config.buildings > 1) issues.push({ level:'warn', title:'模板套数可能限制跨楼栋流水', text:'模板套数少于楼栋数量，后续需显式加入模板转运与资源排队关系。' });
+  const unmapped = quantityItems.filter(item => !tasks.some(task => task.quantitySource === item.name));
+  if (unmapped.length) issues.push({ level:'warn', title:'存在未映射清单项', text:`${unmapped.length} 项清单未能自动分配至工序，需在后续清单映射页人工确认。` });
+  if (quantityItems.length && tasks.some(task => task.quantity > 0 && /钢筋|砌筑|抹灰/.test(task.quantitySource))) issues.push({ level:'warn', title:'工程量采用自动均摊', text:'当前清单未包含楼栋、楼层或施工区字段时，系统按同类任务平均分摊。生成正式计划前应确认分摊结果。' });
+  if (!issues.length) issues.push({ level:'info', title:'基础检查通过', text:'当前原型未发现配置级阻断问题。图纸识别、清单映射和资源日历将在后续模块中参与审查。' });
+  return issues;
+}
+
+function renderIssues(issues) {
+  document.getElementById('issuesList').innerHTML = issues.map(issue => `<article class="issue ${issue.level === 'info' ? '' : issue.level}"><strong>${issue.title}</strong><p>${issue.text}</p></article>`).join('');
+}
+
+function formatDate(milliseconds) { return new Date(milliseconds).toLocaleDateString('zh-CN', { year:'numeric', month:'2-digit', day:'2-digit' }); }
+function showView(name) { document.querySelectorAll('.tab').forEach(tab => tab.classList.toggle('active', tab.dataset.view === name)); document.querySelectorAll('.view').forEach(view => { const active = view.id === `${name}View`; view.classList.toggle('active', active); view.style.display = active ? 'block' : 'none'; }); }
+
+initialize().catch(error => { console.error(error); document.getElementById('status').textContent = `载入失败：${error.message} @ ${error.stack?.split('\\n')[1] || ''}`; });
+
+</script>
+</body>
+</html>
